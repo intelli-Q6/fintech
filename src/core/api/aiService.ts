@@ -108,15 +108,30 @@ Explain that under SEBI regulations you cannot give buy/sell recommendations, th
     try {
       const systemInstruction = this.buildSystemInstruction(portfolioContext);
 
-      // Build message contents for Gemini REST API
-      const conversationHistory = messages.map(m => ({
-        role: m.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: m.text }]
-      }));
+      // Sanitize conversation history:
+      // 1. Multiturn conversations in Gemini MUST start with role 'user'
+      // 2. Roles must strictly alternate between 'user' and 'model'
+      const firstUserIndex = messages.findIndex(m => m.sender === 'user');
+      const relevantMessages = firstUserIndex !== -1 ? messages.slice(firstUserIndex) : messages;
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.defaultModel}:generateContent?key=${apiKey}`;
+      const conversationHistory: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+      for (const m of relevantMessages) {
+        const text = m.text?.trim();
+        if (!text) continue;
+        const role = m.sender === 'user' ? 'user' : 'model';
 
-      const requestBody = {
+        if (conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role === role) {
+          conversationHistory[conversationHistory.length - 1].parts.push({ text });
+        } else {
+          conversationHistory.push({ role, parts: [{ text }] });
+        }
+      }
+
+      if (conversationHistory.length === 0) {
+        return this.generateOfflineHeuristicResponse(messages, holdings);
+      }
+
+      const requestPayload = {
         contents: conversationHistory,
         systemInstruction: {
           parts: [{ text: systemInstruction }]
@@ -128,23 +143,47 @@ Explain that under SEBI regulations you cannot give buy/sell recommendations, th
         }
       };
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      });
+      const directEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.defaultModel}:generateContent?key=${apiKey}`;
+
+      let response: Response;
+      let usedProxy = false;
+
+      try {
+        // Attempt direct client-side call first (zero-egress to Google)
+        response = await fetch(directEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestPayload)
+        });
+      } catch (directErr) {
+        console.warn('Direct Gemini API call blocked or failed (e.g. ad-blocker / network). Falling back to serverless proxy /api/gemini...', directErr);
+        // Fallback to Vercel Serverless proxy to bypass client-side extensions/ad-blockers
+        try {
+          response = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              apiKey,
+              model: this.defaultModel,
+              contents: conversationHistory,
+              systemInstruction: { parts: [{ text: systemInstruction }] }
+            })
+          });
+          usedProxy = true;
+        } catch (proxyErr: any) {
+          throw new Error(`Connection error: ${proxyErr?.message || 'Unable to reach Gemini directly or via proxy'}`);
+        }
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMsg = errorData?.error?.message || `HTTP ${response.status} from Gemini API`;
         console.warn('Gemini API call failed:', errorMsg);
 
-        // If rate-limited or key invalid, gracefully inform user with offline fallback
-        if (response.status === 400 || response.status === 403) {
+        // If rate-limited or key invalid, gracefully inform user with diagnostic message
+        if (response.status === 400 || response.status === 403 || response.status === 404) {
           return {
-            text: `⚠️ **API Key Authentication Issue**: The provided Gemini API Key was rejected (${errorMsg}). Please verify your key in Settings or AI setup.\n\n*Falling back to offline analytics:*\n\n` +
+            text: `⚠️ **API Key Error**: ${errorMsg}.\n\nPlease verify your Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey) in Settings or AI setup.\n\n*Falling back to offline analytics:*\n\n` +
               (await this.generateOfflineHeuristicResponse(messages, holdings)).text,
             isInterception: false,
             modelUsed: 'offline-fallback',
@@ -164,14 +203,14 @@ Explain that under SEBI regulations you cannot give buy/sell recommendations, th
       return {
         text: replyText,
         isInterception,
-        modelUsed: this.defaultModel,
+        modelUsed: this.defaultModel + (usedProxy ? ' (via proxy)' : ''),
         source: 'GEMINI_LIVE'
       };
     } catch (err: any) {
       console.warn('Gemini error, using offline heuristic:', err);
       const fallback = await this.generateOfflineHeuristicResponse(messages, holdings);
       return {
-        text: `*(Note: Switched to offline sovereign mode due to connection error)*\n\n` + fallback.text,
+        text: `*(Note: Switched to offline sovereign mode due to connection error: ${err.message || 'Network error'})*\n\n` + fallback.text,
         isInterception: fallback.isInterception,
         modelUsed: 'offline-rule-engine',
         source: 'OFFLINE_RULE_ENGINE',
