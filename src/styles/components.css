@@ -959,6 +959,12 @@
   background-color: var(--bg-surface-hover);
 }
 
+.holding-snapshot-row:hover {
+  background: var(--bg-surface-hover) !important;
+  border-color: var(--accent-border) !important;
+  transform: translateX(2px);
+}
+
 /* Instrument Pill & Badge */
 .asset-pill {
   font-size: 10px;
