@@ -3,18 +3,14 @@ import { VaultStorage } from '../../data/storage';
 import { Download, Upload, Trash2, CheckCircle, ShieldCheck, Sparkles, Check, Key, Lock, ExternalLink } from 'lucide-react';
 
 interface SettingsViewProps {
-  currentTheme: string;
-  currentMode: string;
-  onThemeChange: (theme: string) => void;
-  onModeChange: (mode: string) => void;
+  currentTheme?: string;
+  currentMode?: string;
+  onThemeChange?: (theme: string) => void;
+  onModeChange?: (mode: string) => void;
   onDataReset: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
-  currentTheme,
-  currentMode,
-  onThemeChange,
-  onModeChange,
   onDataReset
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,88 +58,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <h1 style={{ fontSize: '22px', fontWeight: '700' }}>Workspace Settings & Subscription</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: '700' }}>Sovereign Vault & Membership</h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          Theme Personalization, Local-First Vault Backup & Transparent SaaS Tiers
+          Local-First Vault Backups, Sovereign AI Intelligence & Transparent SaaS Tiers
         </p>
       </div>
 
-      {/* 1. Theme & Density Customization */}
-      <div className="terminal-card" style={{ padding: 22 }}>
-        <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: 14 }}>
-          Appearance & Aesthetic Tokens
-        </h3>
-
-        <div className="responsive-split-equal">
-          {/* 5 Themes */}
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>
-              PALETTE THEME
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-              {[
-                { id: 'slate', name: 'Slate Titanium', color: '#60a5fa' },
-                { id: 'arctic-blue', name: 'Arctic Blue', color: '#38bdf8' },
-                { id: 'emerald', name: 'Emerald Jade', color: '#10b981' },
-                { id: 'violet', name: 'Midnight Violet', color: '#a855f7' },
-                { id: 'amber', name: 'Amber Sovereign', color: '#f59e0b' }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => onThemeChange(t.id)}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: currentTheme === t.id ? 'var(--accent-surface)' : 'var(--bg-subtle)',
-                    border: currentTheme === t.id ? '1px solid var(--accent-border)' : '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    cursor: 'pointer',
-                    color: 'var(--text-primary)',
-                    fontSize: '12px',
-                    fontWeight: currentTheme === t.id ? '600' : '400'
-                  }}
-                >
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: t.color }} />
-                  {t.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Light/Dark Mode & Density Note */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>
-                APPEARANCE MODE
-              </label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => onModeChange('light')}
-                  className={`btn btn-sm ${currentMode === 'light' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ flex: 1 }}
-                >
-                  Light Mode (Default)
-                </button>
-                <button
-                  onClick={() => onModeChange('dark')}
-                  className={`btn btn-sm ${currentMode === 'dark' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ flex: 1 }}
-                >
-                  Dark Mode
-                </button>
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--bg-subtle)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', fontSize: '11px', color: 'var(--text-muted)' }}>
-              <strong>Terminal Density:</strong> Standardized to <strong>Dense Mode</strong> by default for optimal data visibility and streamlined financial analytics.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Sovereign AI Intelligence Settings */}
+      {/* 1. Sovereign AI Intelligence Settings */}
       <div className="terminal-card" style={{ padding: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
           <h3 style={{ fontSize: '15px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -214,7 +135,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Sovereign Local-First Vault Management */}
+      {/* 2. Sovereign Local-First Vault Management */}
       <div className="terminal-card" style={{ padding: 22 }}>
         <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: 6 }}>
           Sovereign Vault Data Storage
