@@ -1,0 +1,44 @@
+name: Supabase Cloud Database Backup
+
+# Fulfills Section 7 Mandate:
+# Automatic daily pg_dump backup to ensure data safety on Supabase Free Tier
+
+on:
+  schedule:
+    # Runs at 02:00 UTC every day
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allows manual trigger anytime from GitHub Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Perform Database Dump
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "DATABASE_URL secret is not set. Please add SUPABASE_DATABASE_URL to GitHub Repository Secrets."
+            exit 0
+          fi
+          mkdir -p backups
+          BACKUP_FILE="backups/koshq_backup_$(date +'%Y_%m_%d_%H%M%S').sql"
+          echo "Dumping database to $BACKUP_FILE..."
+          pg_dump "$DATABASE_URL" --no-owner --no-acl -F p -f "$BACKUP_FILE"
+          gzip "$BACKUP_FILE"
+          echo "Backup created successfully: ${BACKUP_FILE}.gz"
+
+      - name: Upload Backup Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: koshq-db-daily-backup
+          path: backups/*.sql.gz
+          retention-days: 30

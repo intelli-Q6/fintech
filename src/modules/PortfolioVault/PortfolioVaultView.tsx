@@ -53,6 +53,8 @@ import {
   Layers
 } from 'lucide-react';
 import { useMarketQuotes } from '../../core/market/useMarketQuotes';
+import { TransactionService } from '../../core/services/transactionService';
+import { getSupabase } from '../../core/supabase/supabaseClient';
 
 interface PortfolioVaultViewProps {
   holdings: Holding[];
@@ -343,6 +345,35 @@ export const PortfolioVaultView: React.FC<PortfolioVaultViewProps> = ({
     const updated = [newHolding, ...holdings];
     onUpdateHoldings(updated);
     setActiveTab('holdings');
+
+    // Asynchronously record immutable transaction in Cloud PostgreSQL ledger if authenticated
+    const supabase = getSupabase();
+    if (supabase) {
+      TransactionService.getUserAccounts().then(async accounts => {
+        const primary = accounts[0];
+        if (primary) {
+          const instId = await TransactionService.getOrCreateInstrument({
+            symbol: newHolding.symbol,
+            name: newHolding.name,
+            isin: newHolding.isin,
+            assetClass: newHolding.assetClass,
+            sector: newHolding.sector
+          });
+          if (instId) {
+            await TransactionService.createTransaction({
+              accountId: primary.id,
+              instrumentId: instId,
+              type: 'BUY',
+              quantity: qty,
+              price: cost,
+              source: 'MANUAL',
+              notes: 'Manual entry via Portfolio Vault'
+            });
+          }
+        }
+      }).catch(err => console.warn('[Vault] Cloud txn write error:', err));
+    }
+
     // reset
     setNewSymbol('');
     setNewName('');

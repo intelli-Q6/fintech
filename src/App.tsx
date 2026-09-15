@@ -12,6 +12,8 @@ import { SettingsView } from './modules/Settings/SettingsView';
 import { AssetDetailDrawer } from './components/Modal/AssetDetailDrawer';
 import { AIAssistantModal } from './modules/AIAssistant/AIAssistantModal';
 import { PulseConfigModal } from './components/Modal/PulseConfigModal';
+import { AuthModal } from './components/Modal/AuthModal';
+import { AuthProvider } from './core/auth/AuthContext';
 import { Holding, MacroIndicatorConfig } from './data/types';
 import { VaultStorage } from './data/storage';
 import { INITIAL_PORTFOLIO_HOLDINGS } from './data/demoData';
@@ -24,11 +26,12 @@ import {
   Sparkles
 } from 'lucide-react';
 
-export const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [activeModule, setActiveModule] = useState<NavModule>('dashboard');
   const [holdings, setHoldings] = useState<Holding[]>(() => VaultStorage.getHoldings());
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
   const [isAIOpen, setIsAIOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [pulseItems, setPulseItems] = useState<MacroIndicatorConfig[]>(() => VaultStorage.getMacroPulseConfig());
   const [isPulseConfigOpen, setIsPulseConfigOpen] = useState(false);
 
@@ -104,6 +107,7 @@ export const App: React.FC = () => {
           onToggleMobileSidebar={() => setIsMobileDrawerOpen(prev => !prev)}
           pulseItems={pulseItems}
           onOpenPulseConfig={() => setIsPulseConfigOpen(true)}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
         />
 
         <main className="content-area">
@@ -231,6 +235,20 @@ export const App: React.FC = () => {
           <span>AI</span>
         </button>
       </nav>
+
+      {/* Cloud Authentication & Multi-Tenant Access Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };

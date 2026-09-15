@@ -14,10 +14,15 @@ import {
   Clock,
   ShieldCheck,
   Check,
-  X
+  X,
+  Cloud,
+  CloudOff,
+  UploadCloud,
+  LogOut
 } from 'lucide-react';
 import { KoshQLogo } from '../Brand/KoshQLogo';
 import { useMarketQuotes } from '../../core/market/useMarketQuotes';
+import { useAuth } from '../../core/auth/AuthContext';
 
 interface NavbarProps {
   currentTheme: string;
@@ -28,6 +33,7 @@ interface NavbarProps {
   onToggleMobileSidebar: () => void;
   pulseItems?: MacroIndicatorConfig[];
   onOpenPulseConfig?: () => void;
+  onOpenAuth?: () => void;
 }
 
 const THEME_SYMBOLS = [
@@ -46,17 +52,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAI,
   onToggleMobileSidebar,
   pulseItems,
-  onOpenPulseConfig
+  onOpenPulseConfig,
+  onOpenAuth
 }) => {
   const { quotes, sessionInfo, tickerState, togglePause, setTickSpeed, syncAMFI } = useMarketQuotes();
+  const { user, signOut, migrateToCloud } = useAuth();
   const [showFeedPopover, setShowFeedPopover] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [migrating, setMigrating] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close popover on outside click
+  // Close popovers on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
         setShowFeedPopover(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -282,6 +296,81 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           {currentMode === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
         </button>
+
+        {/* Cloud Vault Auth / Sync Button */}
+        {user ? (
+          <div style={{ position: 'relative' }} ref={userMenuRef}>
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="btn btn-secondary btn-sm"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 9px', fontSize: '11px' }}
+              title="Cloud Vault Status"
+            >
+              <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+              <span style={{ maxWidth: 85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.email?.split('@')[0]}
+              </span>
+            </button>
+            {showUserMenu && (
+              <div style={{
+                position: 'absolute',
+                right: 0,
+                top: 'calc(100% + 6px)',
+                backgroundColor: 'var(--surface, #0f172a)',
+                border: '1px solid var(--border-subtle, #334155)',
+                borderRadius: 8,
+                padding: 12,
+                minWidth: 230,
+                boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                zIndex: 999
+              }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                  {user.email}
+                </div>
+                <div style={{ fontSize: '10px', color: '#10b981', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Cloud size={11} /> Cloud Synced • RLS Active
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: 10 }}>
+                  Quota: Free Tier (10 AI queries/day)
+                </div>
+                <div style={{ borderTop: '1px solid var(--border-subtle, #1e293b)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <button
+                    onClick={async () => {
+                      setMigrating(true);
+                      const rep = await migrateToCloud();
+                      setMigrating(false);
+                      alert(rep.success ? `Migrated ${rep.migratedCount} local items to cloud ledger!` : `Migration: ${rep.errors.join(', ')}`);
+                      setShowUserMenu(false);
+                    }}
+                    disabled={migrating}
+                    className="btn btn-secondary btn-sm"
+                    style={{ width: '100%', justifyContent: 'flex-start', fontSize: '11px', gap: 6 }}
+                  >
+                    <UploadCloud size={13} />
+                    {migrating ? 'Migrating...' : 'Sync Local Vault to Cloud'}
+                  </button>
+                  <button
+                    onClick={() => { signOut(); setShowUserMenu(false); }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ width: '100%', justifyContent: 'flex-start', fontSize: '11px', gap: 6, color: '#f87171' }}
+                  >
+                    <LogOut size={13} /> Sign Out
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={onOpenAuth}
+            className="btn btn-secondary btn-sm"
+            style={{ gap: 6, padding: '5px 9px', fontSize: '11px' }}
+            title="Connect Cloud Account"
+          >
+            <Cloud size={12} style={{ color: '#0ea5e9' }} />
+            <span>Cloud Vault</span>
+          </button>
+        )}
 
         {/* AI Educational Assistant Button */}
         <button
