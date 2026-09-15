@@ -73,11 +73,11 @@ class LiveMarketApiClient {
   // Determine API base URL
   private getChartUrl(ticker: string, range = '1mo', interval = '1d'): string {
     const encoded = encodeURIComponent(ticker);
-    return `/api/yahoo-chart/v8/finance/chart/${encoded}?range=${range}&interval=${interval}`;
+    return `/api/quote?ticker=${encoded}&range=${range}&interval=${interval}`;
   }
 
   private getSearchUrl(query: string): string {
-    return `/api/yahoo-search/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=15&newsCount=0`;
+    return `/api/search?q=${encodeURIComponent(query)}`;
   }
 
   // Fetch real-time quote for a single symbol
