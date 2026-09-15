@@ -1,0 +1,379 @@
+/* KoshQ Design Tokens — Institutional Terminal System */
+
+:root {
+  /* Default Fonts */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', var(--font-sans);
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Typography scale */
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.8125rem;  /* 13px */
+  --text-base: 0.875rem; /* 14px */
+  --text-md: 0.9375rem;  /* 15px */
+  --text-lg: 1.0625rem;  /* 17px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+
+  /* Density Default: Compact (High-Efficiency Space Management) */
+  --density-pad-y: 6px;
+  --density-pad-x: 10px;
+  --density-row-h: 36px;
+  --density-font-size: var(--text-xs);
+  --density-gap: 10px;
+  --density-card-pad: 12px;
+
+  /* Border radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 300ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Status Colors */
+  --color-gain: #059669;
+  --color-gain-bg: rgba(5, 150, 105, 0.08);
+  --color-gain-border: rgba(5, 150, 105, 0.22);
+  
+  --color-loss: #dc2626;
+  --color-loss-bg: rgba(220, 38, 38, 0.08);
+  --color-loss-border: rgba(220, 38, 38, 0.22);
+
+  --color-neutral: #64748b;
+  --color-warning: #d97706;
+  --color-warning-bg: rgba(217, 119, 6, 0.08);
+  --color-warning-border: rgba(217, 119, 6, 0.22);
+
+  --color-info: #0284c7;
+  --color-info-bg: rgba(2, 132, 199, 0.08);
+
+  /* Clean Surface System — Card background mirrors active theme surface */
+  --bg-glass: var(--bg-surface);
+  --bg-glass-card: var(--bg-surface);
+  --border-specular: var(--border-subtle);
+  --border-specular-top: var(--border-subtle);
+  --shadow-glass: var(--shadow-sm);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Density overrides */
+[data-density="comfortable"] {
+  --density-pad-y: 10px;
+  --density-pad-x: 14px;
+  --density-row-h: 46px;
+  --density-font-size: var(--text-sm);
+  --density-gap: 14px;
+  --density-card-pad: 18px;
+}
+
+[data-density="compact"] {
+  --density-pad-y: 5px;
+  --density-pad-x: 8px;
+  --density-row-h: 32px;
+  --density-font-size: var(--text-xs);
+  --density-gap: 8px;
+  --density-card-pad: 10px;
+}
+
+/* ===================================================
+   THEME PALETTE 1: SLATE (Default Charcoal & Titanium)
+   =================================================== */
+[data-theme="slate"][data-mode="dark"] {
+  --bg-canvas: #090c10;
+  --bg-subtle: #0d1117;
+  --bg-surface: #131822;
+  --bg-surface-elevated: #1a2232;
+  --bg-surface-hover: #222c40;
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.14);
+  --border-strong: rgba(255, 255, 255, 0.24);
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #8090a7;
+  --text-dim: #4b5563;
+
+  --accent-primary: #60a5fa;
+  --accent-secondary: #93c5fd;
+  --accent-glow: rgba(96, 165, 250, 0.15);
+  --accent-surface: rgba(96, 165, 250, 0.08);
+  --accent-border: rgba(96, 165, 250, 0.3);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --terminal-grid-alt: rgba(255, 255, 255, 0.015);
+}
+
+[data-theme="slate"][data-mode="light"] {
+  --bg-canvas: #f8fafc;
+  --bg-subtle: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-hover: #f1f5f9;
+  
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+
+  --accent-primary: #2563eb;
+  --accent-secondary: #1d4ed8;
+  --accent-glow: rgba(37, 99, 235, 0.12);
+  --accent-surface: rgba(37, 99, 235, 0.08);
+  --accent-border: rgba(37, 99, 235, 0.22);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07);
+  --terminal-grid-alt: rgba(0, 0, 0, 0.01);
+}
+
+/* ===================================================
+   THEME PALETTE 2: ARCTIC BLUE (Sleek Ice Cyan)
+   =================================================== */
+[data-theme="arctic-blue"][data-mode="dark"] {
+  --bg-canvas: #050b14;
+  --bg-subtle: #08111e;
+  --bg-surface: #0e1b2d;
+  --bg-surface-elevated: #14253e;
+  --bg-surface-hover: #1b3252;
+  
+  --border-subtle: rgba(56, 189, 248, 0.1);
+  --border-default: rgba(56, 189, 248, 0.18);
+  --border-strong: rgba(56, 189, 248, 0.32);
+  
+  --text-primary: #f0f9ff;
+  --text-secondary: #bae6fd;
+  --text-muted: #6aa3ca;
+  --text-dim: #385d7e;
+
+  --accent-primary: #38bdf8;
+  --accent-secondary: #7dd3fc;
+  --accent-glow: rgba(56, 189, 248, 0.18);
+  --accent-surface: rgba(56, 189, 248, 0.09);
+  --accent-border: rgba(56, 189, 248, 0.35);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 14px rgba(5, 11, 20, 0.5);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.7);
+  --terminal-grid-alt: rgba(56, 189, 248, 0.02);
+}
+
+[data-theme="arctic-blue"][data-mode="light"] {
+  --bg-canvas: #f8fafc;
+  --bg-subtle: #f0f9ff;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-hover: #e0f2fe;
+  
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+
+  --accent-primary: #0284c7;
+  --accent-secondary: #0369a1;
+  --accent-glow: rgba(2, 132, 199, 0.14);
+  --accent-surface: rgba(2, 132, 199, 0.08);
+  --accent-border: rgba(2, 132, 199, 0.25);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07);
+  --terminal-grid-alt: rgba(0, 0, 0, 0.01);
+}
+
+/* ===================================================
+   THEME PALETTE 3: EMERALD (Institutional Jade Wealth)
+   =================================================== */
+[data-theme="emerald"][data-mode="dark"] {
+  --bg-canvas: #040d0a;
+  --bg-subtle: #081611;
+  --bg-surface: #0e241c;
+  --bg-surface-elevated: #153328;
+  --bg-surface-hover: #1c4436;
+  
+  --border-subtle: rgba(16, 185, 129, 0.1);
+  --border-default: rgba(16, 185, 129, 0.18);
+  --border-strong: rgba(16, 185, 129, 0.32);
+  
+  --text-primary: #ecfdf5;
+  --text-secondary: #a7f3d0;
+  --text-muted: #5e9e80;
+  --text-dim: #2f5d47;
+
+  --accent-primary: #10b981;
+  --accent-secondary: #34d399;
+  --accent-glow: rgba(16, 185, 129, 0.18);
+  --accent-surface: rgba(16, 185, 129, 0.09);
+  --accent-border: rgba(16, 185, 129, 0.35);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.7);
+  --terminal-grid-alt: rgba(16, 185, 129, 0.02);
+}
+
+[data-theme="emerald"][data-mode="light"] {
+  --bg-canvas: #f8fafc;
+  --bg-subtle: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-hover: #f1f5f9;
+  
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+
+  --accent-primary: #059669;
+  --accent-secondary: #047857;
+  --accent-glow: rgba(5, 150, 105, 0.12);
+  --accent-surface: rgba(5, 150, 105, 0.08);
+  --accent-border: rgba(5, 150, 105, 0.25);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07);
+  --terminal-grid-alt: rgba(0, 0, 0, 0.01);
+}
+
+/* ===================================================
+   THEME PALETTE 4: VIOLET (Midnight Deep Lavender)
+   =================================================== */
+[data-theme="violet"][data-mode="dark"] {
+  --bg-canvas: #090714;
+  --bg-subtle: #110d24;
+  --bg-surface: #191333;
+  --bg-surface-elevated: #231b46;
+  --bg-surface-hover: #2e245a;
+  
+  --border-subtle: rgba(168, 85, 247, 0.1);
+  --border-default: rgba(168, 85, 247, 0.18);
+  --border-strong: rgba(168, 85, 247, 0.32);
+  
+  --text-primary: #faf5ff;
+  --text-secondary: #e9d5ff;
+  --text-muted: #9983b8;
+  --text-dim: #544470;
+
+  --accent-primary: #a855f7;
+  --accent-secondary: #c084fc;
+  --accent-glow: rgba(168, 85, 247, 0.18);
+  --accent-surface: rgba(168, 85, 247, 0.09);
+  --accent-border: rgba(168, 85, 247, 0.35);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.7);
+  --terminal-grid-alt: rgba(168, 85, 247, 0.02);
+}
+
+[data-theme="violet"][data-mode="light"] {
+  --bg-canvas: #f8fafc;
+  --bg-subtle: #fbf8ff;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-hover: #f5edff;
+  
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+
+  --accent-primary: #7e22ce;
+  --accent-secondary: #6b21a8;
+  --accent-glow: rgba(126, 34, 206, 0.14);
+  --accent-surface: rgba(126, 34, 206, 0.08);
+  --accent-border: rgba(126, 34, 206, 0.25);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07);
+  --terminal-grid-alt: rgba(0, 0, 0, 0.01);
+}
+
+/* ===================================================
+   THEME PALETTE 5: AMBER (Gold Sovereign & Brass)
+   =================================================== */
+[data-theme="amber"][data-mode="dark"] {
+  --bg-canvas: #0d0a04;
+  --bg-subtle: #161208;
+  --bg-surface: #241d0e;
+  --bg-surface-elevated: #332a15;
+  --bg-surface-hover: #45381d;
+  
+  --border-subtle: rgba(245, 158, 11, 0.1);
+  --border-default: rgba(245, 158, 11, 0.18);
+  --border-strong: rgba(245, 158, 11, 0.32);
+  
+  --text-primary: #fffbeb;
+  --text-secondary: #fde68a;
+  --text-muted: #a6915b;
+  --text-dim: #5c4e28;
+
+  --accent-primary: #f59e0b;
+  --accent-secondary: #fbbf24;
+  --accent-glow: rgba(245, 158, 11, 0.18);
+  --accent-surface: rgba(245, 158, 11, 0.09);
+  --accent-border: rgba(245, 158, 11, 0.35);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.7);
+  --terminal-grid-alt: rgba(245, 158, 11, 0.02);
+}
+
+[data-theme="amber"][data-mode="light"] {
+  --bg-canvas: #f8fafc;
+  --bg-subtle: #fffbeb;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-hover: #fef3c7;
+  
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+
+  --accent-primary: #d97706;
+  --accent-secondary: #b45309;
+  --accent-glow: rgba(217, 119, 6, 0.14);
+  --accent-surface: rgba(217, 119, 6, 0.08);
+  --accent-border: rgba(217, 119, 6, 0.25);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07);
+  --terminal-grid-alt: rgba(0, 0, 0, 0.01);
+}

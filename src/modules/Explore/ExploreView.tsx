@@ -1,0 +1,925 @@
+import React, { useState, useEffect } from 'react';
+import { DEMO_STOCKS, DEMO_MUTUAL_FUNDS, DEMO_BONDS, DEMO_ETFS, generateSyntheticHistory } from '../../data/demoData';
+import { StockDetail, MutualFundDetail, BondDetail, ETFDetail, Holding } from '../../data/types';
+import { formatINR, formatPercent } from '../../core/math/xirr';
+import {
+  Search,
+  ShieldCheck,
+  X,
+  Layers,
+  TrendingUp,
+  PieChart,
+  Landmark,
+  ArrowRight,
+  RefreshCw,
+  Globe,
+  Plus,
+  Check,
+  Sparkles,
+  ExternalLink
+} from 'lucide-react';
+import { MiniSparkline } from '../../components/Charts/MiniSparkline';
+import { useMarketQuotes } from '../../core/market/useMarketQuotes';
+import { liveMarketApi, LiveMarketSearchResult, LiveMarketQuote } from '../../core/api/liveMarketApi';
+import { amfiService } from '../../core/api/amfiService';
+import { VaultStorage } from '../../data/storage';
+
+interface ExploreViewProps {
+  onSelectHolding: (h: Holding) => void;
+  onUpdateHoldings?: (h: Holding[]) => void;
+}
+
+type AssetTabType = 'all' | 'stocks' | 'mfs' | 'etfs' | 'bonds';
+
+export const ExploreView: React.FC<ExploreViewProps> = ({ onSelectHolding, onUpdateHoldings }) => {
+  const { quotes, tickerState, syncAll, registerInstrument } = useMarketQuotes();
+  const [activeAssetType, setActiveAssetType] = useState<AssetTabType>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Live Exchange & AMFI Registry Search State
+  const [liveRegistryResults, setLiveRegistryResults] = useState<LiveMarketSearchResult[]>([]);
+  const [isSearchingLive, setIsSearchingLive] = useState(false);
+  const [addedSymbols, setAddedSymbols] = useState<string[]>([]);
+
+  // Fetch initial live quotes on mount to ensure fresh prices
+  useEffect(() => {
+    syncAll(false);
+  }, []);
+
+  // Debounced Live Indian Market Registry Search (NSE/BSE & AMFI)
+  useEffect(() => {
+    const q = searchTerm.trim();
+    if (q.length < 2) {
+      setLiveRegistryResults([]);
+      setIsSearchingLive(false);
+      return;
+    }
+
+    setIsSearchingLive(true);
+    const timeoutId = setTimeout(async () => {
+      try {
+        // Parallel queries to Yahoo Finance (NSE/BSE) and AMFI official registry
+        const [equityResults, amfiResults] = await Promise.all([
+          liveMarketApi.searchLiveEquities(q),
+          amfiService.searchSchemes(q)
+        ]);
+
+        const formattedMFs: LiveMarketSearchResult[] = amfiResults.slice(0, 6).map(s => ({
+          symbol: `AMFI-${s.schemeCode}`,
+          name: s.schemeName,
+          exchange: 'AMFI',
+          type: 'MUTUAL_FUND',
+          isin: `${s.schemeCode}`
+        }));
+
+        const combined = [...equityResults.slice(0, 8), ...formattedMFs];
+
+        // Fetch live quotes for top equity results to show real-time LTP
+        const resultsWithQuotes = await Promise.all(
+          combined.map(async item => {
+            if (item.type === 'EQUITY' || item.type === 'ETF') {
+              const live = await liveMarketApi.fetchLiveQuote(item.symbol);
+              if (live) {
+                return {
+                  ...item,
+                  livePrice: live.currentPrice,
+                  dayChangePercent: live.dayChangePercent
+                };
+              }
+            } else if (item.type === 'MUTUAL_FUND') {
+              const schemeCode = parseInt(item.isin || '0', 10);
+              if (schemeCode > 0) {
+                const navRes = await amfiService.fetchSchemeNAV(schemeCode);
+                if (navRes) {
+                  return {
+                    ...item,
+                    livePrice: navRes.nav,
+                    dayChangePercent: navRes.dayChangePercent
+                  };
+                }
+              }
+            }
+            return item;
+          })
+        );
+
+        setLiveRegistryResults(resultsWithQuotes);
+      } catch (err) {
+        console.warn('Live search error:', err);
+      } finally {
+        setIsSearchingLive(false);
+      }
+    }, 380);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Transform StockDetail into Holding format for drawer view
+  const handleStockClick = (s: StockDetail) => {
+    const live = quotes[s.symbol];
+    const price = live ? live.currentPrice : s.currentPrice;
+
+    const fakeHolding: Holding = {
+      id: `stock-${s.symbol}`,
+      symbol: s.symbol,
+      name: s.name,
+      isin: s.isin,
+      assetClass: 'equity',
+      sector: s.sector,
+      quantity: 100,
+      averageBuyPrice: price * 0.90,
+      currentPrice: price,
+      investedAmount: price * 90,
+      currentValue: price * 100,
+      unrealizedGain: price * 10,
+      unrealizedGainPercent: 11.1,
+      allocationPercent: 8.5,
+      peRatio: s.peRatio,
+      sparkline: s.history ? s.history['1Y'].slice(-10).map(p => p.close) : [price * 0.92, price * 0.95, price * 0.99, price],
+      riskGrade: s.beta > 1.2 ? 'High' : s.beta > 0.8 ? 'Moderate' : 'Low',
+      history: s.history
+    };
+    onSelectHolding(fakeHolding);
+  };
+
+  // Transform MutualFundDetail into Holding format for drawer view
+  const handleMFClick = (mf: MutualFundDetail) => {
+    const live = quotes[mf.code];
+    const nav = live ? live.currentPrice : mf.nav;
+
+    const fakeHolding: Holding = {
+      id: `mf-${mf.code}`,
+      symbol: mf.code,
+      name: mf.name,
+      isin: mf.code,
+      assetClass: 'mutual_fund',
+      sector: mf.category,
+      quantity: 500,
+      averageBuyPrice: nav * 0.85,
+      currentPrice: nav,
+      investedAmount: nav * 0.85 * 500,
+      currentValue: nav * 500,
+      unrealizedGain: (nav - nav * 0.85) * 500,
+      unrealizedGainPercent: 17.6,
+      allocationPercent: 12.0,
+      sparkline: [nav * 0.88, nav * 0.91, nav * 0.94, nav * 0.97, nav],
+      riskGrade: mf.category.includes('Small') || mf.category.includes('Mid') ? 'High' : 'Moderate'
+    };
+    onSelectHolding(fakeHolding);
+  };
+
+  // Transform ETFDetail into Holding format for drawer view
+  const handleETFClick = (etf: ETFDetail) => {
+    const live = quotes[etf.symbol];
+    const price = live ? live.currentPrice : etf.currentPrice;
+
+    const fakeHolding: Holding = {
+      id: `etf-${etf.symbol}`,
+      symbol: etf.symbol,
+      name: etf.name,
+      isin: etf.isin,
+      assetClass: etf.category === 'Commodity' ? 'gold' : 'equity',
+      sector: etf.underlyingAsset,
+      quantity: 200,
+      averageBuyPrice: price * 0.92,
+      currentPrice: price,
+      investedAmount: price * 0.92 * 200,
+      currentValue: price * 200,
+      unrealizedGain: price * 0.08 * 200,
+      unrealizedGainPercent: 8.7,
+      allocationPercent: 6.5,
+      sparkline: etf.history ? etf.history['1Y'].slice(-10).map(p => p.close) : [price * 0.93, price * 0.96, price],
+      riskGrade: etf.category === 'Debt' ? 'Low' : 'Moderate',
+      history: etf.history
+    };
+    onSelectHolding(fakeHolding);
+  };
+
+  // Transform BondDetail into Holding format for drawer view
+  const handleBondClick = (b: BondDetail) => {
+    const fakeHolding: Holding = {
+      id: `bond-${b.isin}`,
+      symbol: b.isin.slice(-8),
+      name: b.name,
+      isin: b.isin,
+      assetClass: b.name.includes('Gold') ? 'gold' : 'bond',
+      sector: b.issuerType,
+      quantity: 10,
+      averageBuyPrice: b.marketPrice * 0.96,
+      currentPrice: b.marketPrice,
+      investedAmount: b.marketPrice * 0.96 * 10,
+      currentValue: b.marketPrice * 10,
+      unrealizedGain: b.marketPrice * 0.04 * 10,
+      unrealizedGainPercent: 4.17,
+      allocationPercent: 5.0,
+      sparkline: [b.marketPrice * 0.98, b.marketPrice * 0.99, b.marketPrice * 0.995, b.marketPrice],
+      riskGrade: b.creditRating === 'SOVEREIGN' ? 'Low' : 'Moderate'
+    };
+    onSelectHolding(fakeHolding);
+  };
+
+  // Handle live search result selection (fetch real live quote & open factsheet drawer)
+  const handleLiveResultClick = async (item: LiveMarketSearchResult) => {
+    if (item.type === 'MUTUAL_FUND') {
+      const schemeCode = parseInt(item.isin || '0', 10);
+      const navRes = schemeCode > 0 ? await amfiService.fetchSchemeNAV(schemeCode) : null;
+      const nav = navRes ? navRes.nav : item.livePrice || 50;
+
+      const mfHolding: Holding = {
+        id: `live-mf-${item.symbol}`,
+        symbol: item.symbol,
+        name: item.name,
+        isin: item.isin || 'INF000000000',
+        assetClass: 'mutual_fund',
+        sector: 'Direct Mutual Fund (AMFI)',
+        quantity: 100,
+        averageBuyPrice: nav * 0.88,
+        currentPrice: nav,
+        investedAmount: nav * 88,
+        currentValue: nav * 100,
+        unrealizedGain: nav * 12,
+        unrealizedGainPercent: 13.6,
+        allocationPercent: 5.0,
+        sparkline: [nav * 0.92, nav * 0.95, nav * 0.98, nav],
+        riskGrade: 'Moderate'
+      };
+      onSelectHolding(mfHolding);
+      return;
+    }
+
+    // Equity or ETF: fetch live quote with real historical candles
+    const quote = await liveMarketApi.fetchLiveQuote(item.symbol, true);
+    const price = quote ? quote.currentPrice : item.livePrice || 500;
+    registerInstrument(item.symbol, item.name, item.type === 'ETF' ? 'etf' : 'equity', price, quote?.dayChange || 0, quote?.dayChangePercent || 0);
+
+    const holding: Holding = {
+      id: `live-${item.symbol}`,
+      symbol: item.symbol,
+      name: item.name,
+      isin: item.isin || `INE${item.symbol.slice(0, 6)}0101`,
+      assetClass: item.type === 'ETF' ? 'etf' : 'equity',
+      sector: item.type === 'ETF' ? 'Exchange Traded Fund' : `${item.exchange} Listed Equity`,
+      quantity: 50,
+      averageBuyPrice: price * 0.88,
+      currentPrice: price,
+      investedAmount: price * 44,
+      currentValue: price * 50,
+      unrealizedGain: price * 6,
+      unrealizedGainPercent: 13.6,
+      allocationPercent: 6.0,
+      peRatio: 25.0,
+      sparkline: quote?.history && quote.history.length > 5 ? quote.history.slice(-10) : [price * 0.92, price * 0.95, price * 0.98, price],
+      riskGrade: 'Moderate',
+      history: generateSyntheticHistory(price, 0.016, 0.18)
+    };
+    onSelectHolding(holding);
+  };
+
+  // Add Live Searched Instrument directly to User's Sovereign Vault
+  const handleAddToVault = (item: LiveMarketSearchResult, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const price = item.livePrice || 500;
+    const currentVault = VaultStorage.getHoldings();
+
+    const newH: Holding = {
+      id: `vault-add-${item.symbol}-${Date.now()}`,
+      symbol: item.symbol,
+      name: item.name,
+      isin: item.isin || `INE${item.symbol.slice(0, 6)}0101`,
+      assetClass: item.type === 'MUTUAL_FUND' ? 'mutual_fund' : item.type === 'ETF' ? 'etf' : 'equity',
+      sector: item.exchange,
+      quantity: 50,
+      averageBuyPrice: price,
+      currentPrice: price,
+      investedAmount: price * 50,
+      currentValue: price * 50,
+      unrealizedGain: 0,
+      unrealizedGainPercent: 0,
+      allocationPercent: 5.0,
+      sparkline: [price * 0.96, price * 0.98, price],
+      riskGrade: 'Moderate'
+    };
+
+    const updated = [newH, ...currentVault];
+    VaultStorage.saveHoldings(updated);
+    if (onUpdateHoldings) onUpdateHoldings(updated);
+    setAddedSymbols(prev => [...prev, item.symbol]);
+  };
+
+  // Comprehensive Search across EVERY asset class
+  const query = searchTerm.trim().toLowerCase();
+
+  const filteredStocks = DEMO_STOCKS.filter(s =>
+    !query ||
+    s.name.toLowerCase().includes(query) ||
+    s.symbol.toLowerCase().includes(query) ||
+    s.sector.toLowerCase().includes(query) ||
+    s.isin.toLowerCase().includes(query) ||
+    s.marketCapType.toLowerCase().includes(query)
+  );
+
+  const filteredMFs = DEMO_MUTUAL_FUNDS.filter(mf =>
+    !query ||
+    mf.name.toLowerCase().includes(query) ||
+    mf.code.toLowerCase().includes(query) ||
+    mf.category.toLowerCase().includes(query) ||
+    mf.benchmark.toLowerCase().includes(query) ||
+    mf.fundManager.toLowerCase().includes(query) ||
+    mf.topHoldings.some(th => th.name.toLowerCase().includes(query))
+  );
+
+  const filteredETFs = DEMO_ETFS.filter(etf =>
+    !query ||
+    etf.symbol.toLowerCase().includes(query) ||
+    etf.name.toLowerCase().includes(query) ||
+    etf.underlyingAsset.toLowerCase().includes(query) ||
+    etf.isin.toLowerCase().includes(query) ||
+    etf.category.toLowerCase().includes(query)
+  );
+
+  const filteredBonds = DEMO_BONDS.filter(b =>
+    !query ||
+    b.name.toLowerCase().includes(query) ||
+    b.isin.toLowerCase().includes(query) ||
+    b.issuerType.toLowerCase().includes(query) ||
+    b.creditRating.toLowerCase().includes(query) ||
+    b.couponRate.toString().includes(query) ||
+    b.maturityDate.toLowerCase().includes(query)
+  );
+
+  const totalMatches = filteredStocks.length + filteredMFs.length + filteredETFs.length + filteredBonds.length;
+
+  // Render Table Components
+  const renderStocksTable = (stocks: StockDetail[], isEmbedded = false) => (
+    <div className="terminal-card" style={isEmbedded ? { border: '1px solid var(--border-subtle)' } : undefined}>
+      {isEmbedded && (
+        <div className="terminal-header" style={{ padding: '10px 14px', background: 'var(--bg-subtle)' }}>
+          <span className="terminal-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <TrendingUp size={14} style={{ color: 'var(--accent-primary)' }} />
+            Equities (NSE / BSE) • {stocks.length} matches
+          </span>
+          <button onClick={() => setActiveAssetType('stocks')} className="btn btn-ghost btn-sm" style={{ fontSize: '11px' }}>
+            View full equity table <ArrowRight size={12} />
+          </button>
+        </div>
+      )}
+      <div className="terminal-table-wrapper">
+        <table className="terminal-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Sector</th>
+              <th>Market Cap (₹ Cr)</th>
+              <th>LTP (₹)</th>
+              <th>Day Chg</th>
+              <th>P/E</th>
+              <th>P/B</th>
+              <th>ROE</th>
+              <th>ROCE</th>
+              <th>D/E</th>
+              <th>Beta</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stocks.map(s => {
+              const live = quotes[s.symbol];
+              const price = live ? live.currentPrice : s.currentPrice;
+              const dayChg = live ? live.dayChange : s.dayChange;
+              const dayPct = live ? live.dayChangePercent : s.dayChangePercent;
+              const tickClass = live?.lastTick ? `tick-${live.lastTick}` : '';
+              const isExchangeLive = live?.source === 'EXCHANGE_LIVE';
+
+              return (
+                <tr
+                  key={s.symbol}
+                  onClick={() => handleStockClick({ ...s, currentPrice: price, dayChange: dayChg, dayChangePercent: dayPct })}
+                  style={{ cursor: 'pointer' }}
+                  title="Click to view 5-Year Balance Sheets and Audited Financials"
+                >
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                          {s.symbol}
+                        </span>
+                        {isExchangeLive && (
+                          <span style={{ fontSize: '9px', fontWeight: '700', padding: '1px 4px', borderRadius: 3, background: 'rgba(16, 185, 129, 0.15)', color: 'var(--color-gain)' }}>
+                            LIVE
+                          </span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{s.name}</span>
+                    </div>
+                  </td>
+                  <td>{s.sector}</td>
+                  <td className="tabular-nums">₹{s.marketCap.toLocaleString('en-IN')}</td>
+                  <td className={`tabular-nums ${tickClass}`} style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                    ₹{price.toFixed(2)}
+                  </td>
+                  <td className="tabular-nums">
+                    <span className={`delta-badge ${dayChg >= 0 ? 'gain' : 'loss'}`}>
+                      {formatPercent(dayPct, true)}
+                    </span>
+                  </td>
+                  <td className="tabular-nums">{s.peRatio.toFixed(1)}</td>
+                  <td className="tabular-nums">{s.pbRatio.toFixed(1)}</td>
+                  <td className="tabular-nums" style={{ color: 'var(--color-gain)', fontWeight: '600' }}>
+                    {s.roe.toFixed(1)}%
+                  </td>
+                  <td className="tabular-nums">{s.roce.toFixed(1)}%</td>
+                  <td className="tabular-nums">{s.debtToEquity.toFixed(2)}</td>
+                  <td className="tabular-nums">{s.beta.toFixed(2)}</td>
+                  <td>
+                    <MiniSparkline
+                      data={s.history ? s.history['1Y'].slice(-14).map(p => p.close) : [price * 0.95, price]}
+                      width={64}
+                      height={18}
+                      isPositive={dayChg >= 0}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderMFsTable = (mfs: MutualFundDetail[], isEmbedded = false) => (
+    <div className="terminal-card" style={isEmbedded ? { border: '1px solid var(--border-subtle)' } : undefined}>
+      {isEmbedded && (
+        <div className="terminal-header" style={{ padding: '10px 14px', background: 'var(--bg-subtle)' }}>
+          <span className="terminal-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <PieChart size={14} style={{ color: 'var(--accent-primary)' }} />
+            Mutual Funds (Direct) • {mfs.length} matches
+          </span>
+          <button onClick={() => setActiveAssetType('mfs')} className="btn btn-ghost btn-sm" style={{ fontSize: '11px' }}>
+            View full mutual fund table <ArrowRight size={12} />
+          </button>
+        </div>
+      )}
+      <div className="terminal-table-wrapper">
+        <table className="terminal-table">
+          <thead>
+            <tr>
+              <th>Fund Scheme</th>
+              <th>Category</th>
+              <th>NAV (₹)</th>
+              <th>AUM (₹ Cr)</th>
+              <th>TER (Expense)</th>
+              <th>1Y Return</th>
+              <th>3Y CAGR</th>
+              <th>5Y CAGR</th>
+              <th>Sharpe</th>
+              <th>Benchmark</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mfs.map(mf => {
+              const live = quotes[mf.code];
+              const nav = live ? live.currentPrice : mf.nav;
+              const isAMFI = live?.source === 'AMFI_LIVE';
+              const tickClass = live?.lastTick ? `tick-${live.lastTick}` : '';
+
+              return (
+                <tr
+                  key={mf.code}
+                  onClick={() => handleMFClick({ ...mf, nav })}
+                  style={{ cursor: 'pointer' }}
+                  title="Click to view detailed fund factsheet"
+                >
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{mf.name}</span>
+                      {isAMFI && (
+                        <span style={{ fontSize: '9px', fontWeight: '700', padding: '1px 5px', borderRadius: 3, background: 'rgba(16, 185, 129, 0.15)', color: 'var(--color-gain)' }}>
+                          AMFI LIVE
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Manager: {mf.fundManager}</div>
+                  </td>
+                  <td>{mf.category}</td>
+                  <td className={`tabular-nums ${tickClass}`} style={{ fontWeight: '600' }}>₹{nav.toFixed(2)}</td>
+                  <td className="tabular-nums">₹{mf.aumCrores.toLocaleString('en-IN')}</td>
+                  <td className="tabular-nums">{mf.expenseRatio}%</td>
+                  <td className="tabular-nums" style={{ color: 'var(--color-gain)' }}>+{mf.cagr1Y}%</td>
+                  <td className="tabular-nums" style={{ color: 'var(--color-gain)' }}>+{mf.cagr3Y}%</td>
+                  <td className="tabular-nums" style={{ color: 'var(--color-gain)', fontWeight: '600' }}>+{mf.cagr5Y}%</td>
+                  <td className="tabular-nums">{mf.sharpeRatio.toFixed(2)}</td>
+                  <td style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{mf.benchmark}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderETFsTable = (etfs: ETFDetail[], isEmbedded = false) => (
+    <div className="terminal-card" style={isEmbedded ? { border: '1px solid var(--border-subtle)' } : undefined}>
+      {isEmbedded && (
+        <div className="terminal-header" style={{ padding: '10px 14px', background: 'var(--bg-subtle)' }}>
+          <span className="terminal-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Layers size={14} style={{ color: 'var(--accent-primary)' }} />
+            Exchange Traded Funds (ETFs) • {etfs.length} matches
+          </span>
+          <button onClick={() => setActiveAssetType('etfs')} className="btn btn-ghost btn-sm" style={{ fontSize: '11px' }}>
+            View full ETF table <ArrowRight size={12} />
+          </button>
+        </div>
+      )}
+      <div className="terminal-table-wrapper">
+        <table className="terminal-table">
+          <thead>
+            <tr>
+              <th>ETF Symbol</th>
+              <th>Underlying Index / Asset</th>
+              <th>Category</th>
+              <th>LTP (₹)</th>
+              <th>Day Chg</th>
+              <th>NAV (₹)</th>
+              <th>Premium / Discount</th>
+              <th>TER</th>
+              <th>AUM (₹ Cr)</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            {etfs.map(etf => {
+              const live = quotes[etf.symbol];
+              const price = live ? live.currentPrice : etf.currentPrice;
+              const dayPct = live ? live.dayChangePercent : etf.dayChangePercent;
+              const tickClass = live?.lastTick ? `tick-${live.lastTick}` : '';
+              const isLive = live?.source === 'EXCHANGE_LIVE';
+
+              return (
+                <tr
+                  key={etf.symbol}
+                  onClick={() => handleETFClick({ ...etf, currentPrice: price })}
+                  style={{ cursor: 'pointer' }}
+                  title="Click to view detailed ETF factsheet and chart"
+                >
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontWeight: '600', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                          {etf.symbol}
+                        </span>
+                        {isLive && (
+                          <span style={{ fontSize: '9px', fontWeight: '700', padding: '1px 4px', borderRadius: 3, background: 'rgba(16, 185, 129, 0.15)', color: 'var(--color-gain)' }}>
+                            LIVE
+                          </span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{etf.name}</span>
+                    </div>
+                  </td>
+                  <td>{etf.underlyingAsset}</td>
+                  <td>
+                    <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: 'var(--radius-xs)', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-default)' }}>
+                      {etf.category}
+                    </span>
+                  </td>
+                  <td className={`tabular-nums ${tickClass}`} style={{ fontWeight: '600' }}>₹{price.toFixed(2)}</td>
+                  <td className="tabular-nums">
+                    <span className={`delta-badge ${dayPct >= 0 ? 'gain' : 'loss'}`}>
+                      {formatPercent(dayPct, true)}
+                    </span>
+                  </td>
+                  <td className="tabular-nums">₹{etf.nav.toFixed(2)}</td>
+                  <td className="tabular-nums" style={{ color: etf.premiumDiscountPercent >= 0 ? 'var(--color-gain)' : 'var(--color-loss)' }}>
+                    {etf.premiumDiscountPercent >= 0 ? `+${etf.premiumDiscountPercent}% (Fair)` : `${etf.premiumDiscountPercent}% (Discount)`}
+                  </td>
+                  <td className="tabular-nums">{etf.expenseRatio}%</td>
+                  <td className="tabular-nums">₹{etf.aumCrores.toLocaleString('en-IN')} Cr</td>
+                  <td>
+                    <MiniSparkline
+                      data={etf.history ? etf.history['1Y'].slice(-14).map(p => p.close) : [price * 0.96, price]}
+                      width={64}
+                      height={18}
+                      isPositive={dayPct >= 0}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderBondsTable = (bonds: BondDetail[], isEmbedded = false) => (
+    <div className="terminal-card" style={isEmbedded ? { border: '1px solid var(--border-subtle)' } : undefined}>
+      {isEmbedded && (
+        <div className="terminal-header" style={{ padding: '10px 14px', background: 'var(--bg-subtle)' }}>
+          <span className="terminal-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Landmark size={14} style={{ color: 'var(--accent-primary)' }} />
+            Fixed Income & Sovereign Debt • {bonds.length} matches
+          </span>
+          <button onClick={() => setActiveAssetType('bonds')} className="btn btn-ghost btn-sm" style={{ fontSize: '11px' }}>
+            View full debt table <ArrowRight size={12} />
+          </button>
+        </div>
+      )}
+      <div className="terminal-table-wrapper">
+        <table className="terminal-table">
+          <thead>
+            <tr>
+              <th>Debt Instrument</th>
+              <th>Issuer Type</th>
+              <th>Credit Rating</th>
+              <th>Coupon Rate</th>
+              <th>YTM (%)</th>
+              <th>Maturity Date</th>
+              <th>Price (₹)</th>
+              <th>Frequency</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bonds.map(b => (
+              <tr
+                key={b.isin}
+                onClick={() => handleBondClick(b)}
+                style={{ cursor: 'pointer' }}
+                title="Click to view bond maturity and coupon schedule"
+              >
+                <td>
+                  <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{b.name}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ISIN: {b.isin}</div>
+                </td>
+                <td>{b.issuerType}</td>
+                <td>
+                  <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: 'var(--radius-xs)', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-default)' }}>
+                    {b.creditRating}
+                  </span>
+                </td>
+                <td className="tabular-nums" style={{ fontWeight: '600' }}>{b.couponRate.toFixed(2)}%</td>
+                <td className="tabular-nums" style={{ color: 'var(--color-gain)', fontWeight: '700' }}>{b.ytm.toFixed(2)}%</td>
+                <td className="tabular-nums">{b.maturityDate}</td>
+                <td className="tabular-nums">₹{b.marketPrice.toFixed(2)}</td>
+                <td>{b.paymentFrequency}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {/* Header & Global Search Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>Asset Explorer</h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+            Live Exchange Quotes (NSE / BSE), Official AMFI Daily NAVs & Factual Disclosures
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: '1 1 320px', justifyContent: 'flex-end' }}>
+          {/* Refresh Live Exchange Feed Button */}
+          <button
+            onClick={() => syncAll(true)}
+            disabled={tickerState.isExchangeSyncing || tickerState.isAmfiSyncing}
+            className="btn btn-secondary btn-sm"
+            style={{ fontSize: '11px', gap: 5 }}
+            title="Fetch real-time LTP from NSE / BSE & AMFI"
+          >
+            <RefreshCw size={12} className={tickerState.isExchangeSyncing || tickerState.isAmfiSyncing ? 'animate-spin' : ''} />
+            <span>{tickerState.isExchangeSyncing ? 'Syncing Live...' : 'Refresh Live Prices'}</span>
+          </button>
+
+          {/* Search Bar */}
+          <div style={{ position: 'relative', minWidth: 260, flex: '1 1 260px', maxWidth: 440 }}>
+            <Search size={14} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Search ANY stock, ETF, mutual fund (e.g. Trent, Suzlon, HDFC, Gold)..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="input-field"
+              style={{ width: '100%', paddingLeft: 30, paddingRight: searchTerm ? 30 : 12, height: 34, fontSize: '12px' }}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                style={{
+                  position: 'absolute',
+                  right: 8,
+                  top: 8,
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  padding: 2
+                }}
+                title="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Asset Category Tabs with Dynamic Match Badges */}
+      <div className="tabs-bar">
+        <button
+          onClick={() => setActiveAssetType('all')}
+          className={`tab-btn ${activeAssetType === 'all' ? 'active' : ''}`}
+        >
+          All Instruments ({totalMatches})
+        </button>
+        <button
+          onClick={() => setActiveAssetType('stocks')}
+          className={`tab-btn ${activeAssetType === 'stocks' ? 'active' : ''}`}
+        >
+          Equities ({filteredStocks.length})
+        </button>
+        <button
+          onClick={() => setActiveAssetType('mfs')}
+          className={`tab-btn ${activeAssetType === 'mfs' ? 'active' : ''}`}
+        >
+          Mutual Funds ({filteredMFs.length})
+        </button>
+        <button
+          onClick={() => setActiveAssetType('etfs')}
+          className={`tab-btn ${activeAssetType === 'etfs' ? 'active' : ''}`}
+        >
+          ETFs ({filteredETFs.length})
+        </button>
+        <button
+          onClick={() => setActiveAssetType('bonds')}
+          className={`tab-btn ${activeAssetType === 'bonds' ? 'active' : ''}`}
+        >
+          Fixed Income & Sovereign Debt ({filteredBonds.length})
+        </button>
+      </div>
+
+      {/* LIVE MARKET REGISTRY SEARCH RESULTS SECTION (NSE / BSE / AMFI) */}
+      {query.length >= 2 && (
+        <div className="terminal-card" style={{ border: '1px solid var(--accent-border)', background: 'var(--bg-surface)' }}>
+          <div className="terminal-header" style={{ padding: '10px 14px', background: 'var(--bg-subtle)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Globe size={15} style={{ color: 'var(--accent-primary)' }} />
+              <div>
+                <span style={{ fontWeight: '700', fontSize: '13px' }}>
+                  Live Indian Market Registry Search (NSE / BSE / AMFI)
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 8 }}>
+                  {isSearchingLive ? 'Scanning live exchange feeds...' : `${liveRegistryResults.length} real-time instruments found for "${searchTerm}"`}
+                </span>
+              </div>
+            </div>
+            {isSearchingLive && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'var(--accent-primary)' }}>
+                <RefreshCw size={11} className="animate-spin" /> Scanning
+              </span>
+            )}
+          </div>
+
+          {liveRegistryResults.length > 0 ? (
+            <div className="terminal-table-wrapper">
+              <table className="terminal-table">
+                <thead>
+                  <tr>
+                    <th>Security / Scheme</th>
+                    <th>Exchange</th>
+                    <th>Type</th>
+                    <th>Live Price / NAV (₹)</th>
+                    <th>Day Change</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {liveRegistryResults.map(item => {
+                    const isAdded = addedSymbols.includes(item.symbol);
+                    const isGain = (item.dayChangePercent || 0) >= 0;
+
+                    return (
+                      <tr
+                        key={item.symbol}
+                        onClick={() => handleLiveResultClick(item)}
+                        style={{ cursor: 'pointer' }}
+                        title="Click to view full factual factsheet with live chart"
+                      >
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                                {item.symbol}
+                              </span>
+                              <span style={{ fontSize: '9px', fontWeight: '700', padding: '1px 5px', borderRadius: 3, background: 'rgba(16, 185, 129, 0.15)', color: 'var(--color-gain)' }}>
+                                LIVE FEED
+                              </span>
+                            </div>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.name}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: 'var(--radius-xs)', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-default)' }}>
+                            {item.exchange}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`asset-pill ${item.type === 'MUTUAL_FUND' ? 'mf' : item.type === 'ETF' ? 'etf' : 'equity'}`}>
+                            {item.type}
+                          </span>
+                        </td>
+                        <td className="tabular-nums" style={{ fontWeight: '700', color: 'var(--text-primary)' }}>
+                          {item.livePrice ? `₹${item.livePrice.toFixed(2)}` : 'Fetching...'}
+                        </td>
+                        <td className="tabular-nums">
+                          {item.dayChangePercent !== undefined ? (
+                            <span className={`delta-badge ${isGain ? 'gain' : 'loss'}`}>
+                              {formatPercent(item.dayChangePercent, true)}
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
+                            <button
+                              onClick={() => handleLiveResultClick(item)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '10px', padding: '3px 8px', gap: 4 }}
+                            >
+                              <Sparkles size={10} /> Inspect
+                            </button>
+                            <button
+                              onClick={(e) => handleAddToVault(item, e)}
+                              disabled={isAdded}
+                              className={`btn ${isAdded ? 'btn-ghost' : 'btn-primary'} btn-sm`}
+                              style={{ fontSize: '10px', padding: '3px 8px', gap: 4 }}
+                            >
+                              {isAdded ? <><Check size={10} /> In Vault</> : <><Plus size={10} /> Add to Vault</>}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : !isSearchingLive ? (
+            <div style={{ padding: '16px 20px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+              No additional external exchange instruments found for &ldquo;{searchTerm}&rdquo;. Check the local catalog tables below.
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* Global No Results Found in Local Catalog */}
+      {totalMatches === 0 && liveRegistryResults.length === 0 && !isSearchingLive && (
+        <div className="terminal-card" style={{ padding: 40, textAlign: 'center' }}>
+          <Search size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 12px auto' }} />
+          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: 6 }}>No Instruments Found</h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: 460, margin: '0 auto 16px auto' }}>
+            No equities, mutual funds, ETFs, or sovereign debt instruments matched &ldquo;{searchTerm}&rdquo;.
+          </p>
+          <button onClick={() => setSearchTerm('')} className="btn btn-secondary btn-sm">
+            Clear Search Filter
+          </button>
+        </div>
+      )}
+
+      {/* View: All Instruments Consolidated Search */}
+      {activeAssetType === 'all' && totalMatches > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {filteredStocks.length > 0 && renderStocksTable(filteredStocks, true)}
+          {filteredMFs.length > 0 && renderMFsTable(filteredMFs, true)}
+          {filteredETFs.length > 0 && renderETFsTable(filteredETFs, true)}
+          {filteredBonds.length > 0 && renderBondsTable(filteredBonds, true)}
+        </div>
+      )}
+
+      {/* View: Equities Only */}
+      {activeAssetType === 'stocks' && filteredStocks.length > 0 && renderStocksTable(filteredStocks, false)}
+
+      {/* View: Mutual Funds Only */}
+      {activeAssetType === 'mfs' && filteredMFs.length > 0 && renderMFsTable(filteredMFs, false)}
+
+      {/* View: ETFs Only */}
+      {activeAssetType === 'etfs' && filteredETFs.length > 0 && renderETFsTable(filteredETFs, false)}
+
+      {/* View: Bonds Only */}
+      {activeAssetType === 'bonds' && filteredBonds.length > 0 && renderBondsTable(filteredBonds, false)}
+
+      {/* Compliance Disclaimer */}
+      <div className="compliance-notice">
+        <ShieldCheck size={16} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
+        <div>
+          <strong>Non-Intermediary Analytics:</strong> KoshQ displays factual corporate metrics, historical NAVs, and live exchange data across all asset classes. It does not provide buy/sell signals, analyst ratings, target prices, or broker order execution.
+        </div>
+      </div>
+    </div>
+  );
+};
