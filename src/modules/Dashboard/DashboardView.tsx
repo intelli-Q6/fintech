@@ -117,19 +117,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
       {/* 1. Serene Executive Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <h1 style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', margin: 0, color: 'var(--text-primary)' }}>
+            <h1 style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em', margin: 0, color: 'var(--text-primary)' }}>
               Financial Command Centre
             </h1>
             <span style={{
-              fontSize: '9px',
+              fontSize: '10px',
               fontWeight: 700,
-              padding: '1px 7px',
-              borderRadius: 10,
+              padding: '2px 8px',
+              borderRadius: 12,
               background: 'rgba(5, 150, 105, 0.12)',
               color: 'var(--color-gain)',
               border: '1px solid rgba(5, 150, 105, 0.25)',
@@ -137,21 +137,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               alignItems: 'center',
               gap: 4
             }}>
-              <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--color-gain)', display: 'inline-block' }} />
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--color-gain)', display: 'inline-block' }} />
               LIVE PULSE
             </span>
           </div>
-          <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+          <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
             High-level sovereign wealth intelligence • Client-side private ledger
           </p>
         </div>
 
         {/* Primary Action Button to Full Vault */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={() => setShowPhilosophyModal(!showPhilosophyModal)}
             className="btn btn-ghost btn-sm"
-            style={{ fontSize: '11px', padding: '4px 8px', gap: 4, height: 26, color: 'var(--text-muted)' }}
+            style={{ fontSize: '11px', padding: '5px 10px', gap: 4, height: 28, color: 'var(--text-muted)' }}
             title="Click to view Sovereign Client-Side Governance Principles"
           >
             <Lock size={11} style={{ color: 'var(--accent-primary)' }} />
@@ -161,11 +161,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button
             onClick={() => onNavigate('vault')}
             className="btn btn-primary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 12px', fontSize: '11px', fontWeight: 600, height: 26 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 14px', fontSize: '12px', fontWeight: 600, height: 28 }}
           >
-            <Wallet size={11} />
+            <Wallet size={12} />
             <span>Portfolio Vault</span>
-            <ArrowRight size={11} />
+            <ArrowRight size={12} />
           </button>
         </div>
       </div>
@@ -176,21 +176,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="animate-fade-in"
           style={{
             background: 'var(--bg-surface)',
-            border: '1px solid var(--border-default)',
+            border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-sm)',
-            padding: '10px 14px',
+            padding: '12px 16px',
             fontSize: '11px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 3,
+            gap: 4,
             boxShadow: 'var(--shadow-sm)'
           }}
         >
           <div style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <ShieldCheck size={12} style={{ color: 'var(--accent-primary)' }} />
+            <ShieldCheck size={13} style={{ color: 'var(--accent-primary)' }} />
             <span>Sovereign Client-Side Platform Principles</span>
           </div>
-          <p style={{ color: 'var(--text-secondary)', margin: '2px 0 0 0', lineHeight: 1.35 }}>
+          <p style={{ color: 'var(--text-secondary)', margin: '2px 0 0 0', lineHeight: 1.4 }}>
             KoshQ operates strictly client-side in your browser. No portfolio data, broker credentials, or financial records leave your device. All valuation, XIRR calculations, tax models, and crisis simulations run directly on your CPU.
           </p>
         </div>
@@ -200,33 +200,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div
         className="terminal-card"
         style={{
-          padding: '12px 18px',
+          padding: '22px 26px',
           background: 'var(--bg-surface)',
-          border: '1px solid var(--border-default)',
-          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-md)',
           position: 'relative'
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 3 }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 6 }}>
               Consolidated Net Worth
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '26px', fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
                 {formatINR(liveTotalValue)}
               </span>
               {daysTotalChange !== 0 && (
                 <span
                   className={`delta-badge ${daysTotalChange >= 0 ? 'gain' : 'loss'}`}
-                  style={{ fontSize: '11px', padding: '2px 7px', borderRadius: 4, fontWeight: 600 }}
+                  style={{ fontSize: '12px', padding: '3px 8px', borderRadius: 6, fontWeight: 600 }}
                 >
                   {daysTotalChange >= 0 ? '▲ +' : '▼ '}{formatINR(Math.abs(daysTotalChange))} ({daysChangePercent >= 0 ? '+' : ''}{daysChangePercent.toFixed(2)}%) Today
                 </span>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4, fontSize: '11px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
-              <span>Invested: <strong style={{ color: 'var(--text-primary)' }}>{formatINR(totalInvested)}</strong></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10, fontSize: '12px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+              <span>Invested Capital: <strong style={{ color: 'var(--text-primary)' }}>{formatINR(totalInvested)}</strong></span>
               <span style={{ color: 'var(--border-subtle)' }}>•</span>
               <span>Total Gain: <strong style={{ color: liveTotalGain >= 0 ? 'var(--color-gain)' : 'var(--color-loss)' }}>
                 {liveTotalGain >= 0 ? '+' : ''}{formatINR(liveTotalGain)} ({formatPercent(liveGainPercent, true)})
@@ -235,21 +235,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Quick Analytical Gateways */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <button
               onClick={() => onNavigate('workbench')}
               className="btn btn-secondary btn-sm"
-              style={{ fontSize: '11px', padding: '4px 10px', gap: 5, height: 28 }}
+              style={{ fontSize: '11px', padding: '6px 12px', gap: 6, height: 32 }}
             >
-              <Sliders size={11} />
+              <Sliders size={12} />
               <span>Stress Lab</span>
             </button>
             <button
               onClick={() => onNavigate('calculators')}
               className="btn btn-secondary btn-sm"
-              style={{ fontSize: '11px', padding: '4px 10px', gap: 5, height: 28 }}
+              style={{ fontSize: '11px', padding: '6px 12px', gap: 6, height: 32 }}
             >
-              <Calculator size={11} />
+              <Calculator size={12} />
               <span>Calculators</span>
             </button>
           </div>
@@ -265,59 +265,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           deltaType="gain"
           subtext="Benchmark: Nifty 50 TRI (14.4%)"
           sparklineData={[13.2, 14.1, 14.8, 15.6, 16.0, 16.4, 16.82]}
-          icon={<TrendingUp size={12} />}
+          icon={<TrendingUp size={13} />}
         />
         <MetricCard
           label="Asset Split (Growth / Stability)"
           value={`${growthPct}% / ${stabilityPct}%`}
           subtext="Equities & MFs vs Debt, Gold & Cash"
           deltaType="neutral"
-          icon={<PieChart size={12} />}
+          icon={<PieChart size={13} />}
         />
         <MetricCard
           label="Portfolio Health & Risk"
           value="Diversified"
           subtext={`${holdings.length} Assets across ${donutSegments.length} Asset Classes`}
           deltaType="gain"
-          icon={<ShieldCheck size={12} />}
+          icon={<ShieldCheck size={13} />}
         />
       </div>
 
       {/* 4. Dual Section Overview: Allocation Donut & Top 5 Core Holdings */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 10, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, alignItems: 'start' }}>
         {/* Left Card: Multi-Asset Distribution */}
-        <div className="terminal-card" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+        <div className="terminal-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
               Multi-Asset Allocation
             </span>
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
               {donutSegments.length} Classes
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap', flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, flexWrap: 'wrap', flex: 1 }}>
             <div style={{ flexShrink: 0 }}>
               <DonutChart
                 segments={donutSegments}
-                size={120}
-                innerRadius={40}
+                size={140}
+                innerRadius={46}
               />
             </div>
 
             {/* Asset Breakdown Legend */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 150 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 160 }}>
               {donutSegments.map(seg => {
                 const pct = liveTotalValue > 0 ? ((seg.value / liveTotalValue) * 100).toFixed(1) : '0.0';
                 return (
-                  <div key={seg.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: seg.color, flexShrink: 0 }} />
+                  <div key={seg.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, flexShrink: 0 }} />
                       <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{seg.name}</span>
                     </div>
                     <span className="tabular-nums" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                       {formatINR(seg.value, { compact: true })}{' '}
-                      <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: 400 }}>({pct}%)</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 400 }}>({pct}%)</span>
                     </span>
                   </div>
                 );
@@ -327,18 +327,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Right Card: Top 5 Core Holdings Snapshot */}
-        <div className="terminal-card" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+        <div className="terminal-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
               Top Core Positions
             </span>
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
               Top {topHoldings.length} of {holdings.length}
             </span>
           </div>
 
           {/* Holdings List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {topHoldings.map(h => (
               <div
                 key={h.id}
@@ -347,60 +347,60 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '5px 8px',
-                  borderRadius: 'var(--radius-xs)',
-                  background: 'var(--bg-subtle)',
-                  border: '1px solid var(--border-default)',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
                   cursor: 'pointer',
-                  transition: 'all var(--transition-fast)'
+                  transition: 'background-color 0.2s ease, transform 0.1s ease'
                 }}
                 className="holding-snapshot-row"
                 title={`Click to inspect fundamental factsheet for ${h.symbol}`}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 110 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ fontWeight: 700, fontSize: '11px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 120 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
                       {h.symbol}
                     </span>
-                    <span className={`asset-pill ${getAssetPillClass(h.assetClass)}`} style={{ fontSize: '8px', padding: '1px 4px' }}>
+                    <span className={`asset-pill ${getAssetPillClass(h.assetClass)}`} style={{ fontSize: '9px', padding: '1px 5px' }}>
                       {h.assetClass.replace('_', ' ')}
                     </span>
                   </div>
-                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {h.name}
                   </span>
                 </div>
 
                 {/* Weight bar & Current Value */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 65 }}>
-                    <span className="tabular-nums" style={{ fontWeight: 700, fontSize: '11px', color: 'var(--text-primary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 70 }}>
+                    <span className="tabular-nums" style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text-primary)' }}>
                       {formatINR(h.currentVal)}
                     </span>
-                    <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
-                      {h.weight.toFixed(1)}%
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                      {h.weight.toFixed(1)}% weight
                     </span>
                   </div>
 
-                  <span className={`delta-badge ${h.gain >= 0 ? 'gain' : 'loss'}`} style={{ fontSize: '9px', padding: '1px 5px', minWidth: 46, textAlign: 'center' }}>
+                  <span className={`delta-badge ${h.gain >= 0 ? 'gain' : 'loss'}`} style={{ fontSize: '10px', padding: '2px 6px', minWidth: 50, textAlign: 'center' }}>
                     {h.gain >= 0 ? '+' : ''}{h.gainPct.toFixed(1)}%
                   </span>
 
-                  <ChevronRight size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                  <ChevronRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                 </div>
               </div>
             ))}
           </div>
 
           {/* Footer Link to Full Ledger */}
-          <div style={{ marginTop: 8, paddingTop: 6, borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end' }}>
             <button
               onClick={() => onNavigate('vault')}
               className="btn btn-ghost btn-sm"
-              style={{ fontSize: '10px', color: 'var(--accent-primary)', padding: '2px 4px', gap: 4 }}
+              style={{ fontSize: '11px', color: 'var(--accent-primary)', padding: '2px 6px', gap: 4 }}
             >
               <span>View all {holdings.length} holdings in Portfolio Vault</span>
-              <ArrowRight size={10} />
+              <ArrowRight size={11} />
             </button>
           </div>
         </div>
