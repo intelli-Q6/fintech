@@ -1,9 +1,10 @@
-import React from 'react';
-import { Holding, StockDetail } from '../../data/types';
+import React, { useState, useEffect } from 'react';
+import { Holding, StockDetail, HistoricalPricePoint, TimeframeKey } from '../../data/types';
 import { DEMO_STOCKS, generateSyntheticHistory } from '../../data/demoData';
 import { formatINR, formatPercent } from '../../core/math/xirr';
-import { X, ShieldCheck, FileText, Info } from 'lucide-react';
+import { X, ShieldCheck, FileText, Info, RefreshCw } from 'lucide-react';
 import { PriceChart } from '../Charts/PriceChart';
+import { useMarketQuotes } from '../../core/market/useMarketQuotes';
 
 interface AssetDetailDrawerProps {
   holding: Holding | null;
@@ -12,6 +13,85 @@ interface AssetDetailDrawerProps {
 
 export const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({ holding, onClose }) => {
   if (!holding) return null;
+
+  const { quotes } = useMarketQuotes();
+  const liveQuote = quotes[holding.symbol] || quotes[holding.id];
+
+  // Dynamic live price & valuation
+  const currentPrice = liveQuote ? liveQuote.currentPrice : holding.currentPrice;
+  const currentValue = holding.quantity * currentPrice;
+  const investedAmount = holding.investedAmount || (holding.quantity * holding.averageBuyPrice);
+  const unrealizedGain = currentValue - investedAmount;
+  const unrealizedGainPercent = investedAmount > 0 ? (unrealizedGain / investedAmount) * 100 : 0;
+
+  // Real-time live historical OHLC candles
+  const [liveHistory, setLiveHistory] = useState<Record<TimeframeKey, HistoricalPricePoint[]> | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLiveHistory() {
+      if (!holding) return;
+      setIsLoadingHistory(true);
+
+      const sym = holding.symbol.trim().toUpperCase();
+      const rawTicker = sym.startsWith('^') || sym.endsWith('.NS') || sym.endsWith('.BO') || sym.includes('=')
+        ? sym
+        : `${sym}.NS`;
+
+      try {
+        const res = await fetch(`/api/quote?ticker=${encodeURIComponent(rawTicker)}&range=1y&interval=1d`);
+        if (res.ok) {
+          const json = await res.json();
+          const result = json.chart?.result?.[0];
+          if (result && result.timestamp && result.indicators?.quote?.[0]) {
+            const timestamps: number[] = result.timestamp;
+            const quoteData = result.indicators.quote[0];
+            const opens = quoteData.open || [];
+            const highs = quoteData.high || [];
+            const lows = quoteData.low || [];
+            const closes = quoteData.close || [];
+            const volumes = quoteData.volume || [];
+
+            const points: HistoricalPricePoint[] = [];
+            for (let i = 0; i < timestamps.length; i++) {
+              const close = closes[i];
+              if (typeof close === 'number' && !isNaN(close) && close > 0) {
+                const date = new Date(timestamps[i] * 1000).toISOString().split('T')[0];
+                points.push({
+                  date,
+                  open: typeof opens[i] === 'number' && !isNaN(opens[i]) ? opens[i] : close,
+                  high: typeof highs[i] === 'number' && !isNaN(highs[i]) ? highs[i] : close,
+                  low: typeof lows[i] === 'number' && !isNaN(lows[i]) ? lows[i] : close,
+                  close,
+                  volume: typeof volumes[i] === 'number' && !isNaN(volumes[i]) ? volumes[i] : 0
+                });
+              }
+            }
+
+            if (points.length > 0 && isMounted) {
+              // Ensure latest candle reflects real-time LTP
+              points[points.length - 1].close = currentPrice;
+              setLiveHistory({
+                '1M': points.slice(-22),
+                '6M': points.slice(-130),
+                '1Y': points,
+                '3Y': points,
+                '5Y': points
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load live chart candles for drawer:', e);
+      } finally {
+        if (isMounted) setIsLoadingHistory(false);
+      }
+    }
+
+    fetchLiveHistory();
+    return () => { isMounted = false; };
+  }, [holding.symbol, currentPrice]);
 
   // Find detailed company financials if it's an equity
   const stockDetail: StockDetail | undefined = DEMO_STOCKS.find(s => s.symbol === holding.symbol);
@@ -27,6 +107,11 @@ export const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({ holding, o
                 <span className={`asset-pill ${holding.assetClass}`}>
                   {holding.assetClass.toUpperCase()}
                 </span>
+                {liveQuote?.source === 'EXCHANGE_LIVE' && (
+                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'rgba(5, 150, 105, 0.15)', color: 'var(--color-gain)' }}>
+                    LIVE EXCHANGE
+                  </span>
+                )}
               </div>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 {holding.symbol} • ISIN: {holding.isin}
@@ -51,7 +136,7 @@ export const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({ holding, o
           <div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>CURRENT HOLDINGS</div>
             <div style={{ fontSize: '15px', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>
-              {formatINR(holding.currentValue)}
+              {formatINR(currentValue)}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
               {holding.quantity} units @ {formatINR(holding.averageBuyPrice, { showDecimals: true })}
@@ -64,15 +149,15 @@ export const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({ holding, o
               fontSize: '15px',
               fontWeight: '700',
               fontFamily: 'var(--font-mono)',
-              color: holding.unrealizedGain >= 0 ? 'var(--color-gain)' : 'var(--color-loss)'
+              color: unrealizedGain >= 0 ? 'var(--color-gain)' : 'var(--color-loss)'
             }}>
-              {formatINR(holding.unrealizedGain)}
+              {formatINR(unrealizedGain)}
             </div>
             <div style={{
               fontSize: '11px',
-              color: holding.unrealizedGain >= 0 ? 'var(--color-gain)' : 'var(--color-loss)'
+              color: unrealizedGain >= 0 ? 'var(--color-gain)' : 'var(--color-loss)'
             }}>
-              {formatPercent(holding.unrealizedGainPercent, true)}
+              {formatPercent(unrealizedGainPercent, true)}
             </div>
           </div>
 
@@ -93,11 +178,18 @@ export const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({ holding, o
             <h4 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
               Historical Price Performance & Interactive Chart
             </h4>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Multi-Timeframe OHLC & Drawdown</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {isLoadingHistory && (
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <RefreshCw size={10} className="animate-spin" /> Live Candles
+                </span>
+              )}
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Multi-Timeframe OHLC & Drawdown</span>
+            </div>
           </div>
           <PriceChart
-            history={stockDetail?.history || holding.history || generateSyntheticHistory(holding.currentPrice)}
-            currentPrice={holding.currentPrice}
+            history={liveHistory || (holding.history && !stockDetail ? holding.history : generateSyntheticHistory(currentPrice))}
+            currentPrice={currentPrice}
             symbol={holding.symbol}
             height={240}
           />

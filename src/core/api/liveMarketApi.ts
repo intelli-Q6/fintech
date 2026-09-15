@@ -58,15 +58,27 @@ class LiveMarketApiClient {
   }
 
   // Format symbol to Indian exchange ticker (e.g. "TCS" -> "TCS.NS")
-  private normalizeTicker(symbol: string): string {
+  public normalizeTicker(symbol: string): string {
     const s = symbol.trim().toUpperCase();
-    if (s.startsWith('^') || s.endsWith('.NS') || s.endsWith('.BO')) {
+    if (s.startsWith('^') || s.endsWith('.NS') || s.endsWith('.BO') || s.includes('=')) {
       return s;
     }
-    // Index aliases
+    // Index and Macro Tickers for Yahoo Finance
     if (s === 'NIFTY' || s === 'NIFTY50' || s === 'NIFTY 50') return '^NSEI';
     if (s === 'SENSEX' || s === 'BSE SENSEX') return '^BSESN';
     if (s === 'BANKNIFTY' || s === 'NIFTY BANK') return '^NSEBANK';
+    if (s === 'NIFTYIT') return '^CNXIT';
+    if (s === 'MID150') return '^CRSLDX';
+    if (s === 'SML250') return 'NIFTYSMLCAP250.NS';
+    if (s === 'GOLD') return 'GOLDBEES.NS';
+    if (s === 'SILVER') return 'SILVERBEES.NS';
+    if (s === 'OIL') return 'BZ=F';
+    if (s === 'USDINR') return 'USDINR=X';
+    if (s === 'EURINR') return 'EURINR=X';
+    if (s === 'VIX') return '^INDIAVIX';
+    if (s === 'BTCINR') return 'BTC-INR';
+    if (s === 'IN10Y') return 'IN10Y=RR';
+    if (s === 'US10Y') return '^TNX';
     return `${s}.NS`;
   }
 
@@ -84,9 +96,10 @@ class LiveMarketApiClient {
   public async fetchLiveQuote(rawSymbol: string, force = false): Promise<LiveMarketQuote | null> {
     const ticker = this.normalizeTicker(rawSymbol);
     const cleanSymbol = ticker.replace(/\.(NS|BO)$/, '').replace(/^\^/, '');
+    const lookupKey = rawSymbol.trim().toUpperCase();
     const now = Date.now();
 
-    const cached = this.cache[cleanSymbol];
+    const cached = this.cache[lookupKey] || this.cache[cleanSymbol];
     if (!force && cached && now - cached.lastUpdated < CACHE_TTL_MS) {
       return cached;
     }
@@ -120,9 +133,9 @@ class LiveMarketApiClient {
       const validHistory = closePrices.filter(p => typeof p === 'number' && !isNaN(p));
 
       const quote: LiveMarketQuote = {
-        symbol: cleanSymbol,
+        symbol: lookupKey,
         fullTicker: ticker,
-        name: meta.shortName || cleanSymbol,
+        name: meta.shortName || meta.longName || lookupKey,
         exchange: ticker.endsWith('.BO') ? 'BSE' : ticker.startsWith('^') ? 'INDEX' : 'NSE',
         currentPrice: Math.round(price * 100) / 100,
         previousClose: Math.round(prev * 100) / 100,
@@ -138,6 +151,7 @@ class LiveMarketApiClient {
         history: validHistory.length > 0 ? validHistory : undefined
       };
 
+      this.cache[lookupKey] = quote;
       this.cache[cleanSymbol] = quote;
       this.saveCache();
       return quote;

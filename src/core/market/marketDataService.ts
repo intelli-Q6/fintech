@@ -293,33 +293,44 @@ class MarketDataService {
             return q.assetClass === 'equity' || q.assetClass === 'etf' || q.assetClass === 'macro';
           });
 
-      // Fetch live quotes via liveMarketApi
-      await Promise.all(
-        targetSymbols.map(async sym => {
-          try {
-            const live = await liveMarketApi.fetchLiveQuote(sym, true);
-            if (live && live.currentPrice > 0) {
-              const old = this.quotes[sym] || this.quotes[live.symbol];
-              const direction = old && live.currentPrice >= old.currentPrice ? 'up' : 'down';
-              const targetKey = this.quotes[sym] ? sym : live.symbol;
+      // Process in batches of 4 with slight delay to prevent rate-limiting
+      const batchSize = 4;
+      for (let i = 0; i < targetSymbols.length; i += batchSize) {
+        const batch = targetSymbols.slice(i, i + batchSize);
+        await Promise.all(
+          batch.map(async sym => {
+            try {
+              const live = await liveMarketApi.fetchLiveQuote(sym, true);
+              if (live && live.currentPrice > 0) {
+                const old = this.quotes[sym] || this.quotes[live.symbol];
+                const direction = old && live.currentPrice >= old.currentPrice ? 'up' : 'down';
 
-              this.quotes[targetKey] = {
-                id: old?.id || `live-${live.symbol}`,
-                symbol: live.symbol,
-                name: live.name || old?.name || live.symbol,
-                assetClass: old?.assetClass || 'equity',
-                currentPrice: live.currentPrice,
-                previousClose: live.previousClose,
-                dayChange: live.dayChange,
-                dayChangePercent: live.dayChangePercent,
-                lastTick: direction,
-                lastUpdated: Date.now(),
-                source: 'EXCHANGE_LIVE'
-              };
-            }
-          } catch {}
-        })
-      );
+                const updatedQuote: LiveInstrumentQuote = {
+                  id: old?.id || `live-${sym}`,
+                  symbol: sym,
+                  name: live.name || old?.name || sym,
+                  assetClass: old?.assetClass || 'equity',
+                  currentPrice: live.currentPrice,
+                  previousClose: live.previousClose,
+                  dayChange: live.dayChange,
+                  dayChangePercent: live.dayChangePercent,
+                  lastTick: direction,
+                  lastUpdated: Date.now(),
+                  source: 'EXCHANGE_LIVE'
+                };
+
+                this.quotes[sym] = updatedQuote;
+                if (live.symbol && live.symbol !== sym) {
+                  this.quotes[live.symbol] = { ...updatedQuote, symbol: live.symbol };
+                }
+              }
+            } catch {}
+          })
+        );
+        if (i + batchSize < targetSymbols.length) {
+          await new Promise(r => setTimeout(r, 120));
+        }
+      }
 
       this.lastSyncTime = Date.now();
       this.lastExchangeSyncTime = Date.now();
