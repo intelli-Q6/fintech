@@ -18,7 +18,8 @@ import {
   Cloud,
   CloudOff,
   UploadCloud,
-  LogOut
+  LogOut,
+  User
 } from 'lucide-react';
 import { KoshQLogo } from '../Brand/KoshQLogo';
 import { useMarketQuotes } from '../../core/market/useMarketQuotes';
@@ -368,24 +369,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={onOpenAuth}
             className="btn btn-secondary btn-sm"
-            style={{ gap: 6, padding: '5px 9px', fontSize: '11px' }}
-            title="Connect Cloud Account"
+            style={{ gap: 6, padding: '5px 10px', fontSize: '11px' }}
+            title="Log In / Register"
           >
-            <Cloud size={12} style={{ color: '#0ea5e9' }} />
-            <span>Cloud Sync</span>
+            <User size={12} style={{ color: 'var(--accent-primary, #0ea5e9)' }} />
+            <span>Log In/Register</span>
           </button>
         )}
-
-        {/* AI Educational Assistant Button */}
-        <button
-          onClick={onOpenAI}
-          className="btn btn-primary btn-sm"
-          style={{ gap: 6, padding: '5px 10px', fontSize: '11px', fontWeight: '600' }}
-          title="KoshQ AI Assistant"
-        >
-          <Sparkles size={12} />
-          <span className="ai-btn-text">KoshQ AI</span>
-        </button>
       </div>
     </header>
   );

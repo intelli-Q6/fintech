@@ -131,6 +131,7 @@ const AppContent: React.FC = () => {
               holdings={holdings}
               onSelectHolding={setSelectedHolding}
               onNavigate={handleNavigate}
+              onOpenAI={() => setIsAIOpen(true)}
             />
           )}
 

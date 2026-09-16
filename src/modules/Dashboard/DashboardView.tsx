@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Holding } from '../../data/types';
 import { formatINR, formatPercent } from '../../core/math/xirr';
 import { MetricCard } from '../../components/MetricCard/MetricCard';
 import { DonutChart, DonutSegment } from '../../components/Charts/Charts';
+import { MMIHeaderWidget, MMIModal } from '../../components/Charts/MarketMoodIndex';
 import { useMarketQuotes } from '../../core/market/useMarketQuotes';
 import {
   TrendingUp,
@@ -10,20 +11,24 @@ import {
   ShieldCheck,
   ArrowRight,
   Sliders,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 
 interface DashboardViewProps {
   holdings: Holding[];
   onSelectHolding: (h: Holding) => void;
   onNavigate: (module: any, subTab?: string) => void;
+  onOpenAI?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   holdings,
   onSelectHolding,
-  onNavigate
+  onNavigate,
+  onOpenAI
 }) => {
+  const [isMMIOpen, setIsMMIOpen] = useState(false);
   const { quotes } = useMarketQuotes();
 
   // Compute live valuation across all holdings
@@ -160,8 +165,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-      {/* 1. Serene Executive Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      {/* 1. Header with Title, MMI & Action Gateways */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <h1 style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em', margin: 0, color: 'var(--text-primary)' }}>
@@ -187,6 +192,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             Real-time multi-asset wealth intelligence & portfolio command
           </p>
         </div>
+
+        {/* Center: Market Mood Indicator (MMI) - At Indicated Place */}
+        <MMIHeaderWidget
+          value={10.36}
+          onClick={() => setIsMMIOpen(true)}
+        />
+
+        {/* Right: Actions (Stress Lab & KoshQ AI) - At Indicated Place */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => onNavigate('workbench', 'scenarios')}
+            className="btn btn-secondary btn-sm"
+            style={{ fontSize: '11px', padding: '7px 12px', gap: 6, height: 34, fontWeight: 600 }}
+            title="Historical Crisis Stress Lab"
+          >
+            <Sliders size={13} />
+            <span>Stress Lab</span>
+          </button>
+          <button
+            onClick={onOpenAI}
+            className="btn btn-primary btn-sm"
+            style={{
+              fontSize: '11px',
+              padding: '7px 14px',
+              gap: 6,
+              height: 34,
+              fontWeight: 600,
+              background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)',
+              border: 'none',
+              color: '#ffffff',
+              boxShadow: '0 2px 8px rgba(124, 58, 237, 0.25)'
+            }}
+            title="KoshQ AI Sovereign Assistant"
+          >
+            <Sparkles size={13} />
+            <span>KoshQ AI</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Hero Net Worth Banner */}
@@ -205,7 +248,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 6 }}>
               Consolidated Net Worth
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
                 {formatINR(liveTotalValue)}
               </span>
@@ -217,6 +260,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   {daysTotalChange >= 0 ? '▲ +' : '▼ '}{formatINR(Math.abs(daysTotalChange))} ({daysChangePercent >= 0 ? '+' : ''}{daysChangePercent.toFixed(2)}%) Today
                 </span>
               )}
+
+              {/* Compact Portfolio XIRR Badge near Consolidated Net Worth */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  background: 'rgba(5, 150, 105, 0.08)',
+                  border: '1px solid rgba(5, 150, 105, 0.2)',
+                  fontSize: '11px'
+                }}
+                title="Portfolio Extended Internal Rate of Return (Benchmark: Nifty 50 TRI 14.4%)"
+              >
+                <TrendingUp size={11} style={{ color: 'var(--color-gain)' }} />
+                <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>XIRR:</span>
+                <strong style={{ color: 'var(--color-gain)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>16.82%</strong>
+                <span style={{ fontSize: '9.5px', color: 'var(--color-gain)', fontWeight: 600, background: 'rgba(16, 185, 129, 0.12)', padding: '1px 4px', borderRadius: 4 }}>
+                  +2.4% vs Nifty
+                </span>
+              </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10, fontSize: '12px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
               <span>Invested Capital: <strong style={{ color: 'var(--text-primary)' }}>{formatINR(totalInvested)}</strong></span>
@@ -303,32 +368,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               ))}
             </div>
           </div>
-
-          {/* Quick Analytical Gateways */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              onClick={() => onNavigate('workbench', 'scenarios')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '11px', padding: '6px 12px', gap: 6, height: 32 }}
-            >
-              <Sliders size={12} />
-              <span>Stress Lab</span>
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* 3. Three Streamlined Key Metrics */}
+      {/* 3. Streamlined Key Metrics */}
       <div className="metrics-deck">
-        <MetricCard
-          label="Portfolio XIRR"
-          value="16.82%"
-          deltaText="+2.4% vs Nifty"
-          deltaType="gain"
-          subtext="Benchmark: Nifty 50 TRI (14.4%)"
-          sparklineData={[13.2, 14.1, 14.8, 15.6, 16.0, 16.4, 16.82]}
-          icon={<TrendingUp size={13} />}
-        />
         <MetricCard
           label="Asset Split (Growth / Stability)"
           value={`${growthPct}% / ${stabilityPct}%`}
@@ -467,6 +511,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Market Mood Index Detail Modal */}
+      <MMIModal
+        isOpen={isMMIOpen}
+        onClose={() => setIsMMIOpen(false)}
+        value={10.36}
+      />
     </div>
   );
 };
