@@ -57,13 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="brand-logo" onClick={isCollapsed ? onToggleCollapse : undefined} style={{ cursor: isCollapsed ? 'pointer' : 'default' }}>
           <KoshQLogo size={32} glow={true} />
           {(!isCollapsed || isMobileOpen) && (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="brand-name">KoshQ</span>
-                <span className="brand-badge">SOVEREIGN</span>
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Financial Command Centre</div>
-            </div>
+            <span className="brand-name">KoshQ</span>
           )}
         </div>
 
