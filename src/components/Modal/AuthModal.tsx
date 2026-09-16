@@ -100,10 +100,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--text, #f8fafc)' }}>
-                KoshQ Cloud Vault
+                KoshQ Cloud Sync & Account
               </h3>
               <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>
-                PostgreSQL RLS Protected • Zero Local Servers
+                PostgreSQL Row-Level Security • Multi-Device Sync
               </p>
             </div>
           </div>
@@ -357,7 +357,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   opacity: loading ? 0.7 : 1
                 }}
               >
-                {loading ? 'Authenticating...' : tab === 'signin' ? 'Sign In to Vault' : tab === 'signup' ? 'Create Multi-Tenant Account' : 'Send Passwordless Link'}
+                {loading ? 'Authenticating...' : tab === 'signin' ? 'Sign In to Account' : tab === 'signup' ? 'Create Multi-Tenant Account' : 'Send Passwordless Link'}
                 <ArrowRight size={16} />
               </button>
 

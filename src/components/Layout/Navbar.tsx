@@ -178,7 +178,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Ticker Simulation Controls */}
               <div>
                 <div style={{ fontSize: '11px', fontWeight: '600', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>Price Ticker Micro-Walk</span>
+                  <span>Ticker Stream Speed</span>
                   <button
                     onClick={togglePause}
                     className="btn btn-secondary btn-sm"
@@ -236,10 +236,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               </div>
 
-              {/* Zero-Egress Sovereign Guarantee */}
+              {/* Security & Multi-Device Sync Guarantee */}
               <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5, background: 'var(--bg-subtle)', padding: 6, borderRadius: 'var(--radius-xs)' }}>
-                <ShieldCheck size={12} style={{ color: 'var(--color-gain)', flexShrink: 0 }} />
-                <span>Zero Egress: Personal portfolio balances remain in local device memory.</span>
+                <ShieldCheck size={12} style={{ color: user ? 'var(--color-gain)' : 'var(--accent-primary)', flexShrink: 0 }} />
+                <span>
+                  {user
+                    ? 'Cloud Synced: Protected by PostgreSQL Row-Level Security.'
+                    : 'Local Mode: Operating on this device. Sign in to sync across devices.'}
+                </span>
               </div>
             </div>
           )}
@@ -368,7 +372,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Connect Cloud Account"
           >
             <Cloud size={12} style={{ color: '#0ea5e9' }} />
-            <span>Cloud Vault</span>
+            <span>Cloud Sync</span>
           </button>
         )}
 
