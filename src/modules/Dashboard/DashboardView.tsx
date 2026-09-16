@@ -76,6 +76,54 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const growthPct = liveTotalValue > 0 ? ((growthAssets / liveTotalValue) * 100).toFixed(0) : '0';
   const stabilityPct = liveTotalValue > 0 ? ((stabilityAssets / liveTotalValue) * 100).toFixed(0) : '0';
 
+  // 4 Consolidated Asset Allocation Macro Categories: Equity, Debt, Gold & Commodities, Cash
+  let equityVal = 0;
+  let debtVal = 0;
+  let goldVal = 0;
+  let cashVal = 0;
+
+  for (const [cls, val] of Object.entries(classTotals)) {
+    const c = cls.toLowerCase();
+    if (c === 'gold' || c.includes('gold') || c.includes('commodity')) {
+      goldVal += val;
+    } else if (c === 'bond' || c === 'govt_scheme' || c.includes('debt') || c.includes('fixed')) {
+      debtVal += val;
+    } else if (c === 'cash' || c.includes('cash') || c.includes('bank')) {
+      cashVal += val;
+    } else {
+      equityVal += val;
+    }
+  }
+
+  const totalMacroVal = equityVal + debtVal + goldVal + cashVal || liveTotalValue || 0;
+
+  const allocCategories = [
+    {
+      label: 'Equity',
+      value: equityVal,
+      color: '#0084d6',
+      percent: totalMacroVal > 0 ? ((equityVal / totalMacroVal) * 100).toFixed(2) : '0.00'
+    },
+    {
+      label: 'Debt',
+      value: debtVal,
+      color: '#00c288',
+      percent: totalMacroVal > 0 ? ((debtVal / totalMacroVal) * 100).toFixed(2) : '0.00'
+    },
+    {
+      label: 'Gold & Commodities',
+      value: goldVal,
+      color: '#f59e0b',
+      percent: totalMacroVal > 0 ? ((goldVal / totalMacroVal) * 100).toFixed(2) : '0.00'
+    },
+    {
+      label: 'Cash',
+      value: cashVal,
+      color: '#8b5cf6',
+      percent: totalMacroVal > 0 ? ((cashVal / totalMacroVal) * 100).toFixed(2) : '0.00'
+    }
+  ];
+
   // Map holdings with computed live metrics & identify Top 5 Core Holdings
   const holdingsWithLive = holdings.map(h => {
     const live = quotes[h.symbol] || quotes[h.id];
@@ -179,41 +227,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Quick Portfolio Composition & Liquidity Strip (Uses Blank Space) */}
+          {/* Asset Allocation Bar (Executive 4-Category Pill Design) */}
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              gap: 8,
-              flex: '1 1 340px',
-              maxWidth: 480,
-              minWidth: 260,
-              padding: '10px 16px',
+              gap: 12,
+              flex: '1 1 420px',
+              maxWidth: 580,
+              minWidth: 280,
+              padding: '14px 20px',
               background: 'var(--bg-subtle, rgba(255,255,255,0.02))',
               border: '1px solid var(--border-subtle, rgba(255,255,255,0.06))',
-              borderRadius: 'var(--radius-sm, 8px)'
+              borderRadius: 'var(--radius-md, 10px)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
-              <span>Asset Allocation & Stability</span>
-              <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>
-                {growthPct}% Growth • {stabilityPct}% Defensive
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-primary)' }}>
+                Asset Allocation
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                {formatINR(totalMacroVal, { compact: true })} Total
               </span>
             </div>
 
-            {/* Segmented Distribution Pill Bar */}
-            <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', gap: 2, background: 'rgba(0,0,0,0.1)' }}>
-              {donutSegments.map(seg => {
-                const pct = liveTotalValue > 0 ? (seg.value / liveTotalValue) * 100 : 0;
+            {/* Continuous Rounded Pill Bar */}
+            <div
+              style={{
+                display: 'flex',
+                height: 14,
+                borderRadius: 9999,
+                overflow: 'hidden',
+                background: 'rgba(0,0,0,0.15)',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
+                width: '100%'
+              }}
+            >
+              {allocCategories.map(cat => {
+                const pct = totalMacroVal > 0 ? (cat.value / totalMacroVal) * 100 : 0;
                 if (pct <= 0) return null;
                 return (
                   <div
-                    key={seg.name}
-                    title={`${seg.name}: ${formatINR(seg.value)} (${pct.toFixed(1)}%)`}
+                    key={cat.label}
+                    title={`${cat.label}: ${formatINR(cat.value)} (${cat.percent}%)`}
                     style={{
                       width: `${pct}%`,
-                      backgroundColor: seg.color,
+                      backgroundColor: cat.color,
                       transition: 'width 0.4s ease'
                     }}
                   />
@@ -221,28 +281,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               })}
             </div>
 
-            {/* Quick Stat Chips */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: '11px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ color: 'var(--text-muted)' }}>Liquid Cash:</span>
-                <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                  {formatINR(classTotals['cash'] || 0, { compact: true })}
-                </strong>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ color: 'var(--text-muted)' }}>Defensive (Debt+Gold):</span>
-                <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                  {formatINR((classTotals['bond'] || 0) + (classTotals['govt_scheme'] || 0) + (classTotals['gold'] || 0), { compact: true })}
-                </strong>
-              </div>
-              {topHoldings[0] && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Top Asset:</span>
-                  <span style={{ color: 'var(--color-gain)', fontWeight: 600 }}>
-                    {topHoldings[0].symbol.split('.')[0]} ({topHoldings[0].weight.toFixed(0)}%)
-                  </span>
+            {/* Horizontal Legend */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px 18px', flexWrap: 'wrap', fontSize: '12px' }}>
+              {allocCategories.map(cat => (
+                <div key={cat.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: cat.color,
+                      display: 'inline-block',
+                      flexShrink: 0
+                    }}
+                  />
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>{cat.label}</span>
+                  <strong style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                    {cat.percent}%
+                  </strong>
                 </div>
-              )}
+              ))}
             </div>
           </div>
 
