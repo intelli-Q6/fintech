@@ -27,7 +27,7 @@ export interface MMIData {
 const DEFAULT_MMI: MMIData = {
   value: 10.36,
   zone: 'Extreme Fear',
-  color: '#00c288',
+  color: '#059669',
   description: 'High risk aversion observed across street participants. Market volatility elevated relative to recent trend.',
   lastUpdated: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST',
   timestamp: Date.now(),
@@ -125,24 +125,24 @@ class MMIService {
         const mmiValue = Number(Math.max(5.0, Math.min(95.0, rawMmi)).toFixed(2));
 
         let zoneName: 'Extreme Fear' | 'Fear' | 'Greed' | 'Extreme Greed' = 'Extreme Fear';
-        let zoneColor = '#00c288';
+        let zoneColor = '#059669';
         let zoneDescription = 'High risk aversion observed across market participants. Market breadth cautious with volatility elevated.';
 
         if (mmiValue < 30) {
           zoneName = 'Extreme Fear';
-          zoneColor = '#00c288';
+          zoneColor = '#059669';
           zoneDescription = 'High risk aversion observed across market participants. Market breadth cautious with volatility elevated.';
         } else if (mmiValue < 50) {
           zoneName = 'Fear';
-          zoneColor = '#f59e0b';
+          zoneColor = '#d97706';
           zoneDescription = 'Cautious sentiment prevailing with defensive sector rotation across large-cap and mid-cap indices.';
         } else if (mmiValue < 70) {
           zoneName = 'Greed';
-          zoneColor = '#f97316';
+          zoneColor = '#ea580c';
           zoneDescription = 'Positive index momentum with healthy risk appetite across institutional and retail segments.';
         } else {
           zoneName = 'Extreme Greed';
-          zoneColor = '#ef4444';
+          zoneColor = '#dc2626';
           zoneDescription = 'Extended market momentum. Indices trading significantly above short-term moving averages.';
         }
 

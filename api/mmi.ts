@@ -99,24 +99,24 @@ export default async function handler(req: any, res: any) {
 
     // 3. Sentiment Classification (SEBI compliant - 0 buy/sell calls)
     let zoneName = 'Extreme Fear';
-    let zoneColor = '#00c288';
+    let zoneColor = '#059669';
     let zoneDescription = 'High risk aversion observed across street participants. Market volatility elevated relative to recent trend.';
 
     if (mmiValue < 30) {
       zoneName = 'Extreme Fear';
-      zoneColor = '#00c288';
+      zoneColor = '#059669';
       zoneDescription = 'High risk aversion observed across market participants. Market breadth cautious with volatility elevated.';
     } else if (mmiValue < 50) {
       zoneName = 'Fear';
-      zoneColor = '#f59e0b';
+      zoneColor = '#d97706';
       zoneDescription = 'Cautious sentiment prevailing with defensive sector rotation across large-cap and mid-cap indices.';
     } else if (mmiValue < 70) {
       zoneName = 'Greed';
-      zoneColor = '#f97316';
+      zoneColor = '#ea580c';
       zoneDescription = 'Positive index momentum with healthy risk appetite across institutional and retail segments.';
     } else {
       zoneName = 'Extreme Greed';
-      zoneColor = '#ef4444';
+      zoneColor = '#dc2626';
       zoneDescription = 'Extended market momentum. Indices trading significantly above short-term moving averages.';
     }
 

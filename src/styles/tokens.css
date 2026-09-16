@@ -58,6 +58,9 @@
   /* Clean Surface System — Card background mirrors active theme surface */
   --bg-glass: var(--bg-surface);
   --bg-glass-card: var(--bg-surface);
+  --surface: var(--bg-surface);
+  --surface-active: var(--bg-surface-hover);
+  --surface-elevated: var(--bg-surface-elevated);
   --border-specular: var(--border-subtle);
   --border-specular-top: var(--border-subtle);
   --shadow-glass: var(--shadow-sm);

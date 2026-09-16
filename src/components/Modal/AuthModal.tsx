@@ -69,13 +69,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
       padding: '16px'
     }}>
       <div style={{
-        backgroundColor: 'var(--surface, #0f172a)',
-        border: '1px solid var(--border-subtle, #334155)',
+        backgroundColor: 'var(--bg-surface-elevated, var(--bg-surface))',
+        border: '1px solid var(--border-default)',
         borderRadius: '12px',
         width: '100%',
         maxWidth: '460px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-        overflow: 'hidden'
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+        overflow: 'hidden',
+        color: 'var(--text-primary)'
       }}>
         {/* Header */}
         <div style={{

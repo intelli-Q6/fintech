@@ -321,12 +321,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 position: 'absolute',
                 right: 0,
                 top: 'calc(100% + 6px)',
-                backgroundColor: 'var(--surface, #0f172a)',
-                border: '1px solid var(--border-subtle, #334155)',
+                backgroundColor: 'var(--bg-surface-elevated, var(--bg-surface))',
+                border: '1px solid var(--border-default)',
                 borderRadius: 8,
                 padding: 12,
                 minWidth: 230,
-                boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                boxShadow: 'var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.25))',
                 zIndex: 999
               }}>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>

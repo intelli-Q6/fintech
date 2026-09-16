@@ -35,32 +35,32 @@ export const getMMIZone = (val: number) => {
   if (val < 30) {
     return {
       label: 'Extreme Fear',
-      color: '#00c288',
-      lightBg: 'rgba(0, 194, 136, 0.12)',
+      color: '#059669', // Emerald Green
+      lightBg: 'rgba(5, 150, 105, 0.10)',
       sentimentTag: 'HIGH RISK AVERSION',
-      description: 'Market participants displaying elevated risk aversion. Volatility elevated relative to short-term baseline.'
+      description: 'Elevated market risk aversion. Volatility elevated relative to short-term baseline, with widespread cautious positioning.'
     };
   } else if (val < 50) {
     return {
       label: 'Fear',
-      color: '#f59e0b',
-      lightBg: 'rgba(245, 158, 11, 0.12)',
+      color: '#d97706', // Warm Amber (high contrast across light and dark themes)
+      lightBg: 'rgba(217, 119, 6, 0.10)',
       sentimentTag: 'ELEVATED CAUTION',
       description: 'Cautious market sentiment with defensive posture and selective positioning across sectors.'
     };
   } else if (val < 70) {
     return {
       label: 'Greed',
-      color: '#f97316',
-      lightBg: 'rgba(249, 115, 22, 0.12)',
+      color: '#ea580c', // Vibrant Orange
+      lightBg: 'rgba(234, 88, 12, 0.10)',
       sentimentTag: 'POSITIVE MOMENTUM',
       description: 'Constructive risk appetite observed across large-cap and mid-cap market segments.'
     };
   } else {
     return {
       label: 'Extreme Greed',
-      color: '#ef4444',
-      lightBg: 'rgba(239, 68, 68, 0.12)',
+      color: '#dc2626', // Crimson Red
+      lightBg: 'rgba(220, 38, 38, 0.10)',
       sentimentTag: 'EXTENDED MOMENTUM',
       description: 'Extended bullish momentum. Key market indices trading significantly above historical moving averages.'
     };
@@ -93,9 +93,25 @@ export const MMIGauge: React.FC<MMIGaugeProps> = ({
   const needleAngle = 210 - (clampedVal / 100) * 240;
   const needleTip = polarToCartesian(cx, cy, rTrack - 12, needleAngle);
 
-  // Active wedge sector end angle
-  const wedgeStart = polarToCartesian(cx, cy, rTrack + trackWidth / 2, 210);
-  const wedgeEnd = polarToCartesian(cx, cy, rTrack + trackWidth / 2, 138);
+  // Determine active sector arc and wedge angles
+  let activeAngleStart = 210;
+  let activeAngleEnd = 138;
+  if (clampedVal < 30) {
+    activeAngleStart = 210;
+    activeAngleEnd = 138;
+  } else if (clampedVal < 50) {
+    activeAngleStart = 138;
+    activeAngleEnd = 90;
+  } else if (clampedVal < 70) {
+    activeAngleStart = 90;
+    activeAngleEnd = 42;
+  } else {
+    activeAngleStart = 42;
+    activeAngleEnd = -30;
+  }
+
+  const wedgeStart = polarToCartesian(cx, cy, rTrack + trackWidth / 2, activeAngleStart);
+  const wedgeEnd = polarToCartesian(cx, cy, rTrack + trackWidth / 2, activeAngleEnd);
 
   // Arc path IDs for text labels
   const uniqueId = React.useId().replace(/:/g, '');
@@ -139,18 +155,16 @@ export const MMIGauge: React.FC<MMIGaugeProps> = ({
         </defs>
 
         {/* 1. Translucent Active Sector Wedge */}
-        {value < 30 && (
-          <path
-            d={`M ${cx} ${cy} L ${wedgeStart.x} ${wedgeStart.y} A ${rTrack + trackWidth / 2} ${rTrack + trackWidth / 2} 0 0 1 ${wedgeEnd.x} ${wedgeEnd.y} Z`}
-            fill="rgba(0, 194, 136, 0.12)"
-          />
-        )}
+        <path
+          d={`M ${cx} ${cy} L ${wedgeStart.x} ${wedgeStart.y} A ${rTrack + trackWidth / 2} ${rTrack + trackWidth / 2} 0 0 1 ${wedgeEnd.x} ${wedgeEnd.y} Z`}
+          fill={zone.lightBg}
+        />
 
         {/* 2. Base Neutral Track */}
         <path
           d={describeArc(cx, cy, rTrack, 210, -30)}
           fill="none"
-          stroke="var(--bg-subtle, rgba(255,255,255,0.08))"
+          stroke="var(--border-subtle, rgba(148, 163, 184, 0.2))"
           strokeWidth={trackWidth}
           strokeLinecap="round"
         />
@@ -160,38 +174,38 @@ export const MMIGauge: React.FC<MMIGaugeProps> = ({
         <path
           d={describeArc(cx, cy, rOuter, 210, 138)}
           fill="none"
-          stroke="#00c288"
+          stroke="#059669"
           strokeWidth={1.5}
         />
         {/* Fear: 138° to 90° */}
         <path
           d={describeArc(cx, cy, rOuter, 138, 90)}
           fill="none"
-          stroke="#f59e0b"
+          stroke="#d97706"
           strokeWidth={1.5}
         />
         {/* Greed: 90° to 42° */}
         <path
           d={describeArc(cx, cy, rOuter, 90, 42)}
           fill="none"
-          stroke="#f97316"
+          stroke="#ea580c"
           strokeWidth={1.5}
         />
         {/* Extreme Greed: 42° to -30° */}
         <path
           d={describeArc(cx, cy, rOuter, 42, -30)}
           fill="none"
-          stroke="#ef4444"
+          stroke="#dc2626"
           strokeWidth={1.5}
         />
 
         {/* Zone Separation Radial Tick Marks */}
         {[
-          { angle: 210, color: '#00c288' },
-          { angle: 138, color: '#f59e0b' },
-          { angle: 90, color: '#f59e0b' },
-          { angle: 42, color: '#f97316' },
-          { angle: -30, color: '#ef4444' }
+          { angle: 210, color: '#059669' },
+          { angle: 138, color: '#d97706' },
+          { angle: 90, color: '#d97706' },
+          { angle: 42, color: '#ea580c' },
+          { angle: -30, color: '#dc2626' }
         ].map((tick, i) => {
           const p1 = polarToCartesian(cx, cy, rOuter - 4, tick.angle);
           const p2 = polarToCartesian(cx, cy, rOuter + 4, tick.angle);
@@ -209,57 +223,33 @@ export const MMIGauge: React.FC<MMIGaugeProps> = ({
         })}
 
         {/* 4. Active Highlight Arc for Current Zone */}
-        {value < 30 ? (
-          <path
-            d={describeArc(cx, cy, rTrack, 210, 138)}
-            fill="none"
-            stroke="#00c288"
-            strokeWidth={trackWidth}
-            strokeLinecap="round"
-          />
-        ) : value < 50 ? (
-          <path
-            d={describeArc(cx, cy, rTrack, 138, 90)}
-            fill="none"
-            stroke="#f59e0b"
-            strokeWidth={trackWidth}
-          />
-        ) : value < 70 ? (
-          <path
-            d={describeArc(cx, cy, rTrack, 90, 42)}
-            fill="none"
-            stroke="#f97316"
-            strokeWidth={trackWidth}
-          />
-        ) : (
-          <path
-            d={describeArc(cx, cy, rTrack, 42, -30)}
-            fill="none"
-            stroke="#ef4444"
-            strokeWidth={trackWidth}
-            strokeLinecap="round"
-          />
-        )}
+        <path
+          d={describeArc(cx, cy, rTrack, activeAngleStart, activeAngleEnd)}
+          fill="none"
+          stroke={zone.color}
+          strokeWidth={trackWidth}
+          strokeLinecap={activeAngleStart === 210 || activeAngleEnd === -30 ? 'round' : 'butt'}
+        />
 
         {/* 5. Curved Perimeter Labels */}
         {showLabels && (
           <>
-            <text fontSize="7.5" fontWeight="700" fill="#00c288" letterSpacing="0.05em">
+            <text fontSize="7.5" fontWeight="700" fill="#059669" letterSpacing="0.05em">
               <textPath href={`#arc-ef-${uniqueId}`} startOffset="50%" textAnchor="middle">
                 EXTREME FEAR
               </textPath>
             </text>
-            <text fontSize="8" fontWeight="700" fill="#f59e0b" letterSpacing="0.05em">
+            <text fontSize="8" fontWeight="700" fill="#d97706" letterSpacing="0.05em">
               <textPath href={`#arc-fear-${uniqueId}`} startOffset="50%" textAnchor="middle">
                 FEAR
               </textPath>
             </text>
-            <text fontSize="8" fontWeight="700" fill="#f97316" letterSpacing="0.05em">
+            <text fontSize="8" fontWeight="700" fill="#ea580c" letterSpacing="0.05em">
               <textPath href={`#arc-greed-${uniqueId}`} startOffset="50%" textAnchor="middle">
                 GREED
               </textPath>
             </text>
-            <text fontSize="7.5" fontWeight="700" fill="#ef4444" letterSpacing="0.05em">
+            <text fontSize="7.5" fontWeight="700" fill="#dc2626" letterSpacing="0.05em">
               <textPath href={`#arc-eg-${uniqueId}`} startOffset="50%" textAnchor="middle">
                 EXTREME GREED
               </textPath>
@@ -279,7 +269,7 @@ export const MMIGauge: React.FC<MMIGaugeProps> = ({
         />
         {/* Center Hub Circle */}
         <circle cx={cx} cy={cy} r={6.5} fill={zone.color} />
-        <circle cx={cx} cy={cy} r={2.5} fill="#ffffff" />
+        <circle cx={cx} cy={cy} r={2.5} fill="var(--bg-surface-elevated, #ffffff)" />
 
         {/* 7. Centered Score Display */}
         <text
@@ -301,7 +291,7 @@ export const MMIGauge: React.FC<MMIGaugeProps> = ({
           y={cy + 52}
           textAnchor="middle"
           fontSize="9.5"
-          fill="var(--text-muted, #94a3b8)"
+          fill="var(--text-muted, #64748b)"
           fontWeight="500"
         >
           {displayTimestamp}
@@ -344,12 +334,12 @@ export const MMIHeaderWidget: React.FC<{
         alignItems: 'center',
         gap: 12,
         padding: '6px 14px 6px 8px',
-        background: 'var(--bg-surface, rgba(255,255,255,0.02))',
-        border: '1px solid var(--border-subtle, rgba(255,255,255,0.06))',
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
         borderRadius: 'var(--radius-md, 10px)',
         cursor: 'pointer',
         transition: 'all 0.2s ease',
-        boxShadow: 'var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1))',
+        boxShadow: 'var(--shadow-sm)',
         userSelect: 'none'
       }}
       className="mmi-header-card"
@@ -377,6 +367,7 @@ export const MMIHeaderWidget: React.FC<{
               borderRadius: 4,
               background: zone.lightBg,
               color: zone.color,
+              border: `1px solid ${zone.color}30`,
               letterSpacing: '0.04em'
             }}
           >
@@ -452,28 +443,28 @@ export const MMIModal: React.FC<{
     {
       range: '< 30',
       name: 'Extreme Fear',
-      color: '#00c288',
+      color: '#059669',
       desc: 'Elevated market risk aversion. Volatility elevated relative to short-term baseline, with widespread cautious positioning.',
       active: mmiData.value < 30
     },
     {
       range: '30 - 50',
       name: 'Fear',
-      color: '#f59e0b',
+      color: '#d97706',
       desc: 'Cautious sentiment prevailing across participants with defensive sector rotation and consolidation.',
       active: mmiData.value >= 30 && mmiData.value < 50
     },
     {
       range: '50 - 70',
       name: 'Greed',
-      color: '#f97316',
+      color: '#ea580c',
       desc: 'Constructive risk appetite observed with broad-based market participation and positive index momentum.',
       active: mmiData.value >= 50 && mmiData.value < 70
     },
     {
       range: '> 70',
       name: 'Extreme Greed',
-      color: '#ef4444',
+      color: '#dc2626',
       desc: 'Extended bullish momentum. Key market indices trading significantly extended above historical moving averages.',
       active: mmiData.value >= 70
     }
@@ -485,8 +476,8 @@ export const MMIModal: React.FC<{
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(6px)',
+        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+        backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -497,15 +488,16 @@ export const MMIModal: React.FC<{
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          maxWidth: 640,
+          maxWidth: 620,
           width: '100%',
-          maxHeight: '90vh',
+          maxHeight: '92vh',
           overflowY: 'auto',
           padding: '24px 28px',
-          background: 'var(--surface, #0f172a)',
-          border: '1px solid var(--border-subtle, #334155)',
+          background: 'var(--bg-surface-elevated, var(--bg-surface))',
+          border: '1px solid var(--border-default)',
           borderRadius: 'var(--radius-lg, 14px)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+          color: 'var(--text-primary)',
           position: 'relative'
         }}
       >
@@ -514,44 +506,58 @@ export const MMIModal: React.FC<{
           <button
             onClick={handleManualRefresh}
             disabled={isRefreshing}
-            className="btn btn-secondary btn-sm"
-            style={{ gap: 5, fontSize: '11px', padding: '3px 8px' }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: '11px',
+              fontWeight: 600,
+              padding: '5px 10px',
+              borderRadius: 'var(--radius-sm, 6px)',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-secondary)',
+              cursor: isRefreshing ? 'wait' : 'pointer',
+              transition: 'all 0.15s ease'
+            }}
             title="Refresh Live Research Feed"
           >
-            <RefreshCw size={11} className={isRefreshing ? 'animate-spin' : ''} />
+            <RefreshCw size={11} className={isRefreshing ? 'animate-spin' : ''} style={{ color: 'var(--accent-primary)' }} />
             <span>{isRefreshing ? 'Updating...' : 'Live Refresh'}</span>
           </button>
 
           <button
             onClick={onClose}
             style={{
-              background: 'transparent',
-              border: 'none',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
               color: 'var(--text-muted)',
               cursor: 'pointer',
-              padding: 4,
+              padding: '5px',
+              borderRadius: 'var(--radius-sm, 6px)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              transition: 'all 0.15s ease'
             }}
             title="Close"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Header matching Image 2 */}
         <div style={{ textAlign: 'center', marginBottom: 10 }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-muted)' }}>
             Know what's the sentiment on the street today
           </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.02em', margin: '4px 0 0 0', color: 'var(--text-primary)' }}>
+          <h2 style={{ fontSize: '23px', fontWeight: 800, letterSpacing: '-0.02em', margin: '4px 0 0 0', color: 'var(--text-primary)' }}>
             Market Mood Indicator (MMI)
           </h2>
         </div>
 
         {/* Large Centered Gauge matching Image 2 */}
-        <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0 16px 0' }}>
           <MMIGauge
             value={mmiData.value}
             size={280}
@@ -566,26 +572,29 @@ export const MMIModal: React.FC<{
             padding: '12px 16px',
             borderRadius: 'var(--radius-md, 8px)',
             background: zone.lightBg,
-            border: `1px solid ${zone.color}33`,
-            marginBottom: 20,
+            border: `1px solid ${zone.color}40`,
+            marginBottom: 18,
             display: 'flex',
             alignItems: 'center',
             gap: 12
           }}
         >
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: zone.color, flexShrink: 0 }} />
-          <div>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: zone.color }}>
-              Current Sentiment: {zone.label} ({mmiData.value.toFixed(2)}) — {zone.sentimentTag}
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: zone.color, flexShrink: 0, boxShadow: `0 0 8px ${zone.color}80` }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: zone.color, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span>Current Sentiment: {zone.label} ({mmiData.value.toFixed(2)})</span>
+              <span style={{ fontSize: '9.5px', padding: '2px 6px', borderRadius: 4, background: zone.color + '22', color: zone.color, fontWeight: 800, letterSpacing: '0.04em' }}>
+                {zone.sentimentTag}
+              </span>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: 2 }}>
+            <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: 3, lineHeight: 1.45 }}>
               {zone.description}
             </div>
           </div>
         </div>
 
         {/* 4 Zones Breakdown Table */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 18 }}>
           <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 8 }}>
             MMI Sentiment Zones
           </div>
@@ -597,19 +606,25 @@ export const MMIModal: React.FC<{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  borderRadius: 6,
-                  background: z.active ? z.color + '18' : 'var(--bg-subtle, rgba(255,255,255,0.02))',
-                  border: z.active ? `1px solid ${z.color}44` : '1px solid var(--border-subtle, rgba(255,255,255,0.05))',
-                  fontSize: '11px'
+                  gap: 12,
+                  padding: '9px 14px',
+                  borderRadius: 'var(--radius-sm, 8px)',
+                  background: z.active ? `${z.color}15` : 'var(--bg-subtle)',
+                  border: z.active ? `1px solid ${z.color}60` : '1px solid var(--border-subtle)',
+                  fontSize: '11.5px',
+                  transition: 'all 0.15s ease'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 150 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: z.color }} />
-                  <strong style={{ color: z.color }}>{z.name}</strong>
-                  <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>({z.range})</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160, flexShrink: 0 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: z.color, boxShadow: z.active ? `0 0 8px ${z.color}` : 'none' }} />
+                  <span style={{ fontWeight: z.active ? 800 : 600, color: z.active ? z.color : 'var(--text-primary)' }}>
+                    {z.name}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px' }}>
+                    ({z.range})
+                  </span>
                 </div>
-                <div style={{ flex: 1, color: 'var(--text-secondary)', fontSize: '11px', textAlign: 'right' }}>
+                <div style={{ flex: 1, color: z.active ? 'var(--text-primary)' : 'var(--text-secondary)', fontSize: '11px', textAlign: 'right', lineHeight: 1.35 }}>
                   {z.desc}
                 </div>
               </div>
@@ -627,17 +642,17 @@ export const MMIModal: React.FC<{
               <div
                 key={i}
                 style={{
-                  padding: '8px 12px',
-                  background: 'var(--bg-subtle, rgba(255,255,255,0.02))',
-                  border: '1px solid var(--border-subtle, rgba(255,255,255,0.05))',
-                  borderRadius: 6,
+                  padding: '9px 12px',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-sm, 8px)',
                   fontSize: '11px'
                 }}
               >
-                <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{f.label}</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{f.value}</span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{f.sentiment}</span>
+                <div style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: 500 }}>{f.label}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 }}>
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{f.value}</span>
+                  <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>{f.sentiment}</span>
                 </div>
               </div>
             ))}
@@ -645,7 +660,7 @@ export const MMIModal: React.FC<{
         </div>
 
         {/* Regulatory Compliance & Non-Advisory Notice */}
-        <div style={{ marginTop: 20, paddingTop: 12, borderTop: '1px solid var(--border-subtle)', fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.5, textAlign: 'center' }}>
+        <div style={{ marginTop: 18, paddingTop: 12, borderTop: '1px solid var(--border-subtle)', fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.5, textAlign: 'center' }}>
           <strong>Regulatory Notice:</strong> The Market Mood Indicator (MMI) is a mathematical sentiment model evaluating volatility, market breadth, and institutional activity. KoshQ does not provide buy/sell calls, target prices, or investment recommendations in accordance with SEBI guidelines.
         </div>
       </div>
