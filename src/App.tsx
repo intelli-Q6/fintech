@@ -28,6 +28,7 @@ import {
 
 const AppContent: React.FC = () => {
   const [activeModule, setActiveModule] = useState<NavModule>('dashboard');
+  const [workbenchTab, setWorkbenchTab] = useState<'compare' | 'screener' | 'scenarios' | 'goals'>('compare');
   const [holdings, setHoldings] = useState<Holding[]>(() => VaultStorage.getHoldings());
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
   const [isAIOpen, setIsAIOpen] = useState(false);
@@ -74,12 +75,26 @@ const AppContent: React.FC = () => {
     alert('Local vault reset to authentic initial demo state.');
   };
 
+  const handleNavigate = (module: NavModule, tab?: string) => {
+    setActiveModule(module);
+    if (module === 'workbench' && tab) {
+      setWorkbenchTab(tab as any);
+    }
+  };
+
+  const handleSelectModule = (mod: NavModule) => {
+    setActiveModule(mod);
+    if (mod === 'workbench') {
+      setWorkbenchTab('compare');
+    }
+  };
+
   return (
     <div className="app-shell">
-      {/* Sidebar Navigation */}
+      {/* Sovereign Left Sidebar Navigation Rail */}
       <Sidebar
         activeModule={activeModule}
-        onSelectModule={setActiveModule}
+        onSelectModule={handleSelectModule}
         portfolioCount={holdings.length}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -115,7 +130,7 @@ const AppContent: React.FC = () => {
             <DashboardView
               holdings={holdings}
               onSelectHolding={setSelectedHolding}
-              onNavigate={setActiveModule}
+              onNavigate={handleNavigate}
             />
           )}
 
@@ -132,7 +147,7 @@ const AppContent: React.FC = () => {
           )}
 
           {activeModule === 'workbench' && (
-            <WorkbenchView />
+            <WorkbenchView initialTab={workbenchTab} />
           )}
 
           {activeModule === 'calculators' && (

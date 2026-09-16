@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DEMO_STOCKS, DEMO_GOALS } from '../../data/demoData';
 import { StockDetail, GoalItem } from '../../data/types';
 import { formatINR, formatPercent } from '../../core/math/xirr';
@@ -18,8 +18,18 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-export const WorkbenchView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'compare' | 'screener' | 'scenarios' | 'goals'>('compare');
+interface WorkbenchViewProps {
+  initialTab?: 'compare' | 'screener' | 'scenarios' | 'goals';
+}
+
+export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ initialTab = 'compare' }) => {
+  const [activeTab, setActiveTab] = useState<'compare' | 'screener' | 'scenarios' | 'goals'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Crisis Replay State
   const userHoldings = VaultStorage.getHoldings();

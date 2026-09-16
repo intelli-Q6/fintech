@@ -16,7 +16,7 @@ import {
 interface DashboardViewProps {
   holdings: Holding[];
   onSelectHolding: (h: Holding) => void;
-  onNavigate: (module: any) => void;
+  onNavigate: (module: any, subTab?: string) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -307,7 +307,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Quick Analytical Gateways */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <button
-              onClick={() => onNavigate('workbench')}
+              onClick={() => onNavigate('workbench', 'scenarios')}
               className="btn btn-secondary btn-sm"
               style={{ fontSize: '11px', padding: '6px 12px', gap: 6, height: 32 }}
             >
