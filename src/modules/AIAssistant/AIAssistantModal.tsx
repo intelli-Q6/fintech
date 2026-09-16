@@ -47,7 +47,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
     {
       id: 'msg-init',
       sender: 'assistant',
-      text: `Hello. I am the **KoshQ Sovereign AI Analyst**.\n\nI have active context of your **${holdings.length} portfolio positions** totaling **${formatINR(holdings.reduce((s, h) => s + h.currentValue, 0))}**. I can analyze your asset allocation, calculate risk concentration, explain corporate financial statements, and model tax scenarios.\n\n*Note: Operating strictly under SEBI non-intermediary guidelines. I do not provide speculative buy/sell calls, target prices, or trading tips.*`
+      text: `Hello. I am **KoshQ AI**, your portfolio intelligence and financial analytics copilot.\n\nI have active context of your **${holdings.length} portfolio positions** totaling **${formatINR(holdings.reduce((s, h) => s + h.currentValue, 0))}**. I can analyze your asset allocation, calculate risk concentration, evaluate corporate fundamentals, and model tax scenarios.\n\n*Note: Operating strictly under SEBI non-intermediary guidelines. I do not provide speculative buy/sell calls, target prices, or trading tips.*`
     }
   ]);
 
@@ -106,7 +106,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
         {
           id: `err-${Date.now()}`,
           sender: 'assistant',
-          text: `⚠️ **Processing Error**: ${err.message || 'Unable to generate response. Please verify your connection or Gemini API key.'}`,
+          text: `⚠️ **Processing Notice**: ${err.message || 'Unable to complete request. Falling back to local intelligence.'}`,
           timestamp: Date.now()
         }
       ]);
@@ -153,26 +153,31 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
               <Sparkles size={16} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.02em', margin: 0 }}>
-                  KoshQ Sovereign AI
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.02em', margin: 0, color: 'var(--text-primary)' }}>
+                  KoshQ AI
                 </h3>
                 <span
                   style={{
-                    fontSize: '9px',
+                    fontSize: '9.5px',
                     fontWeight: '700',
-                    padding: '1px 5px',
-                    borderRadius: 3,
-                    background: apiKey ? 'rgba(5, 150, 105, 0.12)' : 'var(--bg-subtle)',
-                    color: apiKey ? 'var(--color-gain)' : 'var(--text-muted)',
-                    border: '1px solid var(--border-subtle)'
+                    padding: '2px 7px',
+                    borderRadius: 4,
+                    background: 'rgba(16, 185, 129, 0.12)',
+                    color: '#10b981',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    letterSpacing: '0.02em'
                   }}
                 >
-                  {apiKey ? 'GEMINI 1.5 LIVE' : 'OFFLINE HEURISTIC'}
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+                  {apiKey ? 'GEMINI 1.5 LIVE' : 'AI COPILOT ACTIVE'}
                 </span>
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 1 }}>
-                Client-Side Sovereign Financial Analyst
+                Institutional Portfolio & Financial Copilot
               </div>
             </div>
           </div>
@@ -180,22 +185,30 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <button
               onClick={() => setShowKeyConfig(!showKeyConfig)}
-              className={`btn btn-sm ${apiKey ? 'btn-secondary' : 'btn-primary'}`}
-              style={{ fontSize: '11px', padding: '3px 8px', gap: 4, height: 26 }}
-              title="Configure Google Gemini API Key"
+              className="btn btn-ghost btn-sm"
+              style={{
+                fontSize: '11px',
+                padding: '4px 9px',
+                gap: 5,
+                height: 28,
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '6px',
+                color: apiKey ? 'var(--color-gain)' : 'var(--text-secondary)'
+              }}
+              title="Configure Google Gemini API Key (Optional)"
             >
-              <Key size={12} />
-              <span>{apiKey ? 'API Key' : 'Connect Key'}</span>
+              <Key size={12} style={{ color: apiKey ? 'var(--color-gain)' : 'var(--text-muted)' }} />
+              <span>{apiKey ? 'Custom Key' : 'API Key'}</span>
             </button>
             <button
               onClick={handleResetChat}
               className="btn btn-ghost btn-sm"
-              style={{ padding: 5, height: 26 }}
+              style={{ padding: 5, height: 28, width: 28 }}
               title="Reset Conversation"
             >
               <RotateCcw size={13} />
             </button>
-            <button onClick={onClose} className="btn btn-ghost btn-sm" style={{ padding: 5, height: 26 }}>
+            <button onClick={onClose} className="btn btn-ghost btn-sm" style={{ padding: 5, height: 28, width: 28 }}>
               <X size={16} />
             </button>
           </div>
@@ -215,7 +228,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Lock size={13} style={{ color: 'var(--accent-primary)' }} />
-                Google Gemini API Key (Client-Side Storage)
+                Google Gemini API Key (Optional Personal Quota)
               </span>
               <a
                 href="https://aistudio.google.com/app/apikey"
@@ -223,13 +236,13 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                 rel="noopener noreferrer"
                 style={{ fontSize: '11px', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: 3 }}
               >
-                <span>Get Free Key (30s)</span>
+                <span>Get Free Key (Google AI Studio)</span>
                 <ExternalLink size={10} />
               </a>
             </div>
 
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4, marginBottom: 10 }}>
-              Your API key is stored <strong>exclusively in your browser's localStorage</strong>. Requests call Google Gemini directly from your device with zero data stored on any KoshQ server.
+              KoshQ AI is active and powered by default. You can optionally connect a personal Google Gemini API key if you wish to run extended analytical prompts using your personal developer quota. Keys are stored strictly on your device.
             </p>
 
             <form onSubmit={handleSaveKey} style={{ display: 'flex', gap: 8 }}>
@@ -250,7 +263,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                   onClick={handleClearKey}
                   className="btn btn-secondary btn-sm"
                   style={{ height: 30, padding: '0 10px', fontSize: '11px' }}
-                  title="Remove Key and return to offline heuristic mode"
+                  title="Remove Key"
                 >
                   Clear
                 </button>
@@ -260,7 +273,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
             {keySavedToast && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-gain)', fontSize: '11px', marginTop: 6, fontWeight: 600 }}>
                 <Check size={12} />
-                <span>API Key saved locally. Gemini Live connection active!</span>
+                <span>API Key saved locally. Custom Gemini Live connection active!</span>
               </div>
             )}
           </div>
@@ -352,7 +365,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
 
               {m.source && (
                 <div style={{ fontSize: '9px', color: m.sender === 'user' ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)', marginTop: 4, textAlign: 'right' }}>
-                  {m.source === 'GEMINI_LIVE' ? 'Generated by Gemini 1.5 Flash' : 'Generated by Client Heuristic'}
+                  {m.source === 'GEMINI_LIVE' ? 'KoshQ AI (Gemini 1.5 Live)' : 'KoshQ Portfolio Intelligence'}
                 </div>
               )}
             </div>

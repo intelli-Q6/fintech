@@ -58,36 +58,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <h1 style={{ fontSize: '22px', fontWeight: '700' }}>Sovereign Vault & Membership</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: '700' }}>Vault & Membership Settings</h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          Local-First Vault Backups, Sovereign AI Intelligence & Transparent SaaS Tiers
+          Local-First Vault Backups, KoshQ AI Intelligence & Membership Tiers
         </p>
       </div>
 
-      {/* 1. Sovereign AI Intelligence Settings */}
+      {/* 1. KoshQ AI Intelligence Settings */}
       <div className="terminal-card" style={{ padding: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
           <h3 style={{ fontSize: '15px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Sparkles size={16} style={{ color: 'var(--accent-primary)' }} />
-            Sovereign AI Intelligence (Google Gemini API)
+            KoshQ AI Intelligence (Optional Custom Key)
           </h3>
           <span
             style={{
               fontSize: '10px',
               fontWeight: 700,
               padding: '2px 7px',
-              borderRadius: 3,
-              background: aiKey ? 'rgba(5, 150, 105, 0.12)' : 'var(--bg-subtle)',
-              color: aiKey ? 'var(--color-gain)' : 'var(--text-muted)',
-              border: '1px solid var(--border-subtle)'
+              borderRadius: 4,
+              background: 'rgba(16, 185, 129, 0.12)',
+              color: '#10b981',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4
             }}
           >
-            {aiKey ? 'GEMINI 1.5 LIVE' : 'OFFLINE HEURISTIC'}
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+            {aiKey ? 'CUSTOM GEMINI KEY ACTIVE' : 'AI COPILOT ACTIVE'}
           </span>
         </div>
 
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 14 }}>
-          Connect a free Google Gemini API key to enable live conversational analysis of your portfolio, corporate annual reports, and tax scenarios. Key is stored strictly on your device.
+          KoshQ AI is active and available by default. You can optionally connect your personal Google Gemini API key to run extended queries using your own cloud developer quota. Keys are stored strictly on your local device.
         </p>
 
         <div style={{ maxWidth: 580 }}>

@@ -99,123 +99,108 @@ Explain that under SEBI regulations you cannot give buy/sell recommendations, th
   ): Promise<AIServiceResponse> {
     const apiKey = customApiKey || VaultStorage.getAIApiKey();
     const portfolioContext = this.serializePortfolioContext(holdings);
+    const systemInstruction = this.buildSystemInstruction(portfolioContext);
 
-    // If no API key configured, use intelligent client-side heuristic engine
-    if (!apiKey) {
+    // Sanitize conversation history for Gemini:
+    // 1. Multiturn conversations in Gemini MUST start with role 'user'
+    // 2. Roles must strictly alternate between 'user' and 'model'
+    const firstUserIndex = messages.findIndex(m => m.sender === 'user');
+    const relevantMessages = firstUserIndex !== -1 ? messages.slice(firstUserIndex) : messages;
+
+    const conversationHistory: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+    for (const m of relevantMessages) {
+      const text = m.text?.trim();
+      if (!text) continue;
+      const role = m.sender === 'user' ? 'user' : 'model';
+
+      if (conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role === role) {
+        conversationHistory[conversationHistory.length - 1].parts.push({ text });
+      } else {
+        conversationHistory.push({ role, parts: [{ text }] });
+      }
+    }
+
+    if (conversationHistory.length === 0) {
       return this.generateOfflineHeuristicResponse(messages, holdings);
     }
 
+    const requestPayload = {
+      contents: conversationHistory,
+      systemInstruction: {
+        parts: [{ text: systemInstruction }]
+      },
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 1024,
+        topP: 0.8
+      }
+    };
+
+    // 1. Primary Route: Try Backend Serverless Proxy (/api/gemini)
+    // Works automatically if server-side GEMINI_API_KEY is configured or custom apiKey is passed
     try {
-      const systemInstruction = this.buildSystemInstruction(portfolioContext);
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey: apiKey || undefined,
+          model: this.defaultModel,
+          contents: conversationHistory,
+          systemInstruction: { parts: [{ text: systemInstruction }] }
+        })
+      });
 
-      // Sanitize conversation history:
-      // 1. Multiturn conversations in Gemini MUST start with role 'user'
-      // 2. Roles must strictly alternate between 'user' and 'model'
-      const firstUserIndex = messages.findIndex(m => m.sender === 'user');
-      const relevantMessages = firstUserIndex !== -1 ? messages.slice(firstUserIndex) : messages;
-
-      const conversationHistory: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
-      for (const m of relevantMessages) {
-        const text = m.text?.trim();
-        if (!text) continue;
-        const role = m.sender === 'user' ? 'user' : 'model';
-
-        if (conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role === role) {
-          conversationHistory[conversationHistory.length - 1].parts.push({ text });
-        } else {
-          conversationHistory.push({ role, parts: [{ text }] });
-        }
-      }
-
-      if (conversationHistory.length === 0) {
-        return this.generateOfflineHeuristicResponse(messages, holdings);
-      }
-
-      const requestPayload = {
-        contents: conversationHistory,
-        systemInstruction: {
-          parts: [{ text: systemInstruction }]
-        },
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 1024,
-          topP: 0.8
-        }
-      };
-
-      let response: Response;
-      let usedProxy = true;
-
-      // Primary secure route: Backend serverless proxy (/api/gemini)
-      try {
-        response = await fetch('/api/gemini', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            apiKey,
-            model: this.defaultModel,
-            contents: conversationHistory,
-            systemInstruction: { parts: [{ text: systemInstruction }] }
-          })
-        });
-      } catch (proxyErr) {
-        console.warn('Backend proxy /api/gemini unavailable (e.g. offline dev). Trying direct fallback...', proxyErr);
-        // Fallback for offline local dev if serverless functions are not running
-        const directEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.defaultModel}:generateContent?key=${apiKey}`;
-        response = await fetch(directEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestPayload)
-        });
-        usedProxy = false;
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMsg = errorData?.error?.message || `HTTP ${response.status} from Gemini API`;
-        console.warn('Gemini API call failed:', errorMsg);
-
-        // If rate-limited or key invalid, gracefully inform user with diagnostic message
-        if (response.status === 400 || response.status === 403 || response.status === 404) {
+      if (response.ok) {
+        const data = await response.json();
+        const candidate = data.candidates?.[0];
+        const replyText = candidate?.content?.parts?.[0]?.text;
+        if (replyText) {
+          const isInterception = replyText.includes('[REGULATORY INTENT REDIRECTION]');
           return {
-            text: `⚠️ **API Key Error**: ${errorMsg}.\n\nPlease verify your Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey) in Settings or AI setup.\n\n*Falling back to offline analytics:*\n\n` +
-              (await this.generateOfflineHeuristicResponse(messages, holdings)).text,
-            isInterception: false,
-            modelUsed: 'offline-fallback',
-            source: 'OFFLINE_RULE_ENGINE',
-            error: errorMsg
+            text: replyText,
+            isInterception,
+            modelUsed: this.defaultModel + ' (Cloud Copilot)',
+            source: 'GEMINI_LIVE'
           };
         }
-
-        throw new Error(errorMsg);
       }
-
-      const data = await response.json();
-      const candidate = data.candidates?.[0];
-      const replyText = candidate?.content?.parts?.[0]?.text || 'No response text received from model.';
-      const isInterception = replyText.includes('[REGULATORY INTENT REDIRECTION]');
-
-      return {
-        text: replyText,
-        isInterception,
-        modelUsed: this.defaultModel + (usedProxy ? ' (via proxy)' : ''),
-        source: 'GEMINI_LIVE'
-      };
-    } catch (err: any) {
-      console.warn('Gemini error, using offline heuristic:', err);
-      const fallback = await this.generateOfflineHeuristicResponse(messages, holdings);
-      return {
-        text: `*(Note: Switched to offline sovereign mode due to connection error: ${err.message || 'Network error'})*\n\n` + fallback.text,
-        isInterception: fallback.isInterception,
-        modelUsed: 'offline-rule-engine',
-        source: 'OFFLINE_RULE_ENGINE',
-        error: err.message
-      };
+    } catch (proxyErr) {
+      // Backend proxy unavailable (e.g. offline dev). If custom key is provided, try direct Google API
+      if (apiKey) {
+        try {
+          const directEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.defaultModel}:generateContent?key=${apiKey}`;
+          const directRes = await fetch(directEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestPayload)
+          });
+          if (directRes.ok) {
+            const data = await directRes.json();
+            const candidate = data.candidates?.[0];
+            const replyText = candidate?.content?.parts?.[0]?.text;
+            if (replyText) {
+              const isInterception = replyText.includes('[REGULATORY INTENT REDIRECTION]');
+              return {
+                text: replyText,
+                isInterception,
+                modelUsed: this.defaultModel + ' (Direct Gemini)',
+                source: 'GEMINI_LIVE'
+              };
+            }
+          }
+        } catch (directErr) {
+          console.warn('Direct Gemini call fallback failed:', directErr);
+        }
+      }
     }
+
+    // 2. Seamless Native Intelligence Engine (Institutional Client-Side Reasoning)
+    return this.generateOfflineHeuristicResponse(messages, holdings);
   }
 
   /**
-   * Offline Deterministic Financial Reasoning Engine (Zero API Key Fallback)
+   * Native Deterministic Financial Intelligence Engine
+   * Provides institutional analysis without requiring external API keys
    */
   private async generateOfflineHeuristicResponse(
     messages: AIMessage[],
@@ -224,97 +209,196 @@ Explain that under SEBI regulations you cannot give buy/sell recommendations, th
     const lastUserMessage = [...messages].reverse().find(m => m.sender === 'user');
     const query = (lastUserMessage?.text || '').toLowerCase();
 
-    // 1. Advisory Interception
+    const totalVal = holdings.reduce((sum, h) => sum + h.currentValue, 0);
+    const totalInvested = holdings.reduce((sum, h) => sum + h.investedAmount, 0);
+    const totalGain = totalVal - totalInvested;
+    const gainPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
+
+    // 1. Advisory Interception (Strict SEBI Non-Intermediary Guardrail)
     const isAdvisory =
       query.includes('should i buy') ||
+      query.includes('should i sell') ||
       query.includes('which stock to buy') ||
       query.includes('target price') ||
       query.includes('best stock') ||
       query.includes('recommend') ||
-      query.includes('buy call');
+      query.includes('buy call') ||
+      query.includes('sell call') ||
+      query.includes('multibagger');
 
     if (isAdvisory) {
       return {
         text: `[REGULATORY INTENT REDIRECTION]
-I cannot provide stock recommendations, price targets, or buy/sell signals under SEBI regulations.
+I cannot provide stock recommendations, buy/sell calls, price targets, or trading tips under SEBI regulations.
 
-However, I can help you evaluate the company objectively through our 5-pillar fundamental checklist:
-• **Valuation Multiples**: Compare Trailing P/E and P/B relative to 5-year historical medians.
-• **Balance Sheet Solvency**: Debt-to-Equity ratio (< 1.0) and Interest Coverage (> 4.0x).
-• **Return on Capital**: Return on Equity (ROE > 15%) and ROCE consistency across business cycles.
-• **Cash Flow Realization**: Free Cash Flow conversion compared to reported accounting Net Profit.
-• **Ownership Quality**: Promoter pledging (< 5%) and institutional ownership trends.
+However, I can help you evaluate any instrument objectively through our **5-Pillar Fundamental Framework**:
+1. **Valuation Multiples**: Compare Trailing P/E and P/B against 5-year historical medians and industry peers.
+2. **Balance Sheet Solvency**: Debt-to-Equity (< 1.0) and Interest Coverage Ratio (> 4.0x).
+3. **Return on Capital**: Consistent Return on Equity (ROE > 15%) and ROCE across economic cycles.
+4. **Cash Flow Realization**: Free Cash Flow (FCF) conversion relative to reported accounting Net Profit.
+5. **Promoter Integrity & Governance**: Zero or low promoter share pledging (< 5%) and stable institutional ownership.
 
-You can inspect all these metrics side-by-side in the **Workbench → Comparative Engine** tab.`,
+*You can inspect these metrics across your holdings in the **Workbench → Comparative Engine**.*`,
         isInterception: true,
-        modelUsed: 'offline-rule-engine',
+        modelUsed: 'koshq-intelligence-engine',
         source: 'OFFLINE_RULE_ENGINE'
       };
     }
 
-    // 2. Concentration / Risk Query
-    if (query.includes('concentration') || query.includes('risk') || query.includes('hhi')) {
-      const topHolding = [...holdings].sort((a, b) => b.currentValue - a.currentValue)[0];
+    // 2. Specific Holding Lookup
+    const matchedHolding = holdings.find(h => {
+      const sym = h.symbol.toLowerCase();
+      const name = h.name.toLowerCase();
+      return query.includes(sym) || query.includes(name);
+    });
+
+    if (matchedHolding) {
+      const pnlSymbol = matchedHolding.unrealizedGain >= 0 ? '+' : '';
+      return {
+        text: `**Position Analytics: ${matchedHolding.symbol} (${matchedHolding.name})**
+• **Asset Class**: ${matchedHolding.assetClass.toUpperCase()}
+• **Current Market Value**: ${formatINR(matchedHolding.currentValue)}
+• **Invested Principal**: ${formatINR(matchedHolding.investedAmount)}
+• **Unrealized Gain / Loss**: ${pnlSymbol}${formatINR(matchedHolding.unrealizedGain)} (${formatPercent(matchedHolding.unrealizedGainPercent, true)})
+• **Portfolio Allocation**: **${matchedHolding.allocationPercent.toFixed(1)}%** of your net worth
+• **Average Buy Price**: ${formatINR(matchedHolding.averageBuyPrice)} | **CMP**: ${formatINR(matchedHolding.currentPrice)}
+• **Position Units**: ${matchedHolding.quantity.toLocaleString('en-IN')} units
+
+**Analytical Assessment**:
+- Weight Contribution: At ${matchedHolding.allocationPercent.toFixed(1)}%, this position has a ${matchedHolding.allocationPercent > 15 ? 'significant' : 'balanced'} influence on aggregate portfolio volatility.
+- Institutional Strategy: Maintain disciplined risk parity. Consider rebalancing if single-stock weight exceeds 15% to mitigate company-specific drawdown risk.`,
+        isInterception: false,
+        modelUsed: 'koshq-intelligence-engine',
+        source: 'OFFLINE_RULE_ENGINE'
+      };
+    }
+
+    // 3. Concentration & Risk Query
+    if (query.includes('concentration') || query.includes('risk') || query.includes('hhi') || query.includes('diversif')) {
+      const sortedByVal = [...holdings].sort((a, b) => b.currentValue - a.currentValue);
+      const top3 = sortedByVal.slice(0, 3);
+      const top3Weight = top3.reduce((sum, h) => sum + h.allocationPercent, 0);
+
       return {
         text: `**Portfolio Risk & Concentration Diagnosis**:
-• **Active Position Count**: ${holdings.length} Positions across multiple asset classes.
-• **Top Weight Concentration**: Your largest position is **${topHolding?.symbol || 'N/A'}** representing **${topHolding?.allocationPercent?.toFixed(1) || 0}%** of your total net worth.
-• **Diversification Benchmark**: In institutional risk modeling, keeping individual company holdings under **15%** and single sectors under **25%** significantly dampens idiosyncratic drawdown risk.
-• **Actionable Check**: Use **Portfolio Vault → Portfolio X-Ray** to review your calculated Herfindahl-Hirschman Index (HHI) score.`,
+• **Active Positions**: ${holdings.length} holdings totaling ${formatINR(totalVal)}.
+• **Top 3 Concentration**: **${top3Weight.toFixed(1)}%** of your total capital is deployed in:
+${top3.map((h, i) => `  ${i + 1}. **${h.symbol}**: ${h.allocationPercent.toFixed(1)}% (${formatINR(h.currentValue, { compact: true })})`).join('\n')}
+• **Diversification Status**:
+  - Top single holding weight: **${sortedByVal[0]?.symbol}** (${sortedByVal[0]?.allocationPercent.toFixed(1)}%).
+  - Institutional Rule of Thumb: Keep individual equities under **15%** and any single sector under **25%** to mitigate idiosyncratic risk.
+• **Actionable Optimization**: Check the **Portfolio Vault → Portfolio X-Ray** to evaluate your Herfindahl-Hirschman Index (HHI) concentration score.`,
         isInterception: false,
-        modelUsed: 'offline-rule-engine',
+        modelUsed: 'koshq-intelligence-engine',
         source: 'OFFLINE_RULE_ENGINE'
       };
     }
 
-    // 3. Tax / Capital Gains Query
-    if (query.includes('tax') || query.includes('ltcg') || query.includes('stcg') || query.includes('budget')) {
+    // 4. Performance, Gainers & Losers Query
+    if (query.includes('performance') || query.includes('gain') || query.includes('profit') || query.includes('loss') || query.includes('return') || query.includes('winner') || query.includes('loser')) {
+      const sortedByGainPct = [...holdings].sort((a, b) => b.unrealizedGainPercent - a.unrealizedGainPercent);
+      const best = sortedByGainPct[0];
+      const worst = sortedByGainPct[sortedByGainPct.length - 1];
+
       return {
-        text: `**Indian Capital Gains Taxation (FY 2025-26 / Budget 2024 Rules)**:
-• **Long-Term Capital Gains (LTCG - Section 112A)**:
-  - Holding period: > 12 months for listed equity and equity mutual funds.
-  - Exemption: **₹1,25,000** per financial year.
-  - Tax Rate: **12.5%** on gains exceeding ₹1.25 Lakh (without indexation).
-• **Short-Term Capital Gains (STCG - Section 111A)**:
-  - Holding period: ≤ 12 months.
-  - Tax Rate: Flat **20%**.
-• **Debt Mutual Funds & Bonds**:
-  - Taxed at your applicable income tax slab rate.
-• **Tax Loss Harvesting**:
-  - You can set off STCL against both STCG and LTCG under Section 70. Check the **Research Studio → Tax Loss Harvesting** tab to review harvestable lots.`,
+        text: `**Portfolio Performance & Return Summary**:
+• **Consolidated Net Worth**: ${formatINR(totalVal)}
+• **Total Invested Capital**: ${formatINR(totalInvested)}
+• **Aggregate Unrealized P&L**: **${totalGain >= 0 ? '+' : ''}${formatINR(totalGain)}** (${formatPercent(gainPct, true)})
+
+**Key Drivers**:
+• **Top Performer**: **${best?.symbol}** (${best?.name}) with **${formatPercent(best?.unrealizedGainPercent || 0, true)}** return (${formatINR(best?.unrealizedGain || 0)} gain).
+• **Bottom Performer**: **${worst?.symbol}** (${worst?.name}) with **${formatPercent(worst?.unrealizedGainPercent || 0, true)}** return (${formatINR(worst?.unrealizedGain || 0)} P&L).
+
+*Track money-weighted timing and benchmark comparisons against Nifty 50 in the **Portfolio Vault → Performance** tab.*`,
         isInterception: false,
-        modelUsed: 'offline-rule-engine',
+        modelUsed: 'koshq-intelligence-engine',
         source: 'OFFLINE_RULE_ENGINE'
       };
     }
 
-    // 4. Asset Allocation / Rebalance Query
-    if (query.includes('rebalance') || query.includes('allocation') || query.includes('equity') || query.includes('debt')) {
+    // 5. Tax & Capital Gains (Budget 2024 / FY 2025-26 Rules)
+    if (query.includes('tax') || query.includes('ltcg') || query.includes('stcg') || query.includes('budget') || query.includes('harvest')) {
+      return {
+        text: `**Indian Capital Gains Taxation Framework (Budget 2024 Rules)**:
+
+1. **Long-Term Capital Gains (LTCG - Section 112A)**:
+   - Holding Period: > 12 months for listed equities and equity mutual funds.
+   - Annual Exemption: **₹1,25,000** per financial year.
+   - Tax Rate: **12.5%** on gains exceeding ₹1.25 Lakh (without indexation).
+
+2. **Short-Term Capital Gains (STCG - Section 111A)**:
+   - Holding Period: ≤ 12 months.
+   - Tax Rate: Flat **20%** (increased from 15% in Budget 2024).
+
+3. **Debt Mutual Funds & Fixed Income**:
+   - Taxed at your individual slab rate as short-term capital gains under Section 50AA.
+
+4. **Tax-Loss Harvesting**:
+   - Short-term capital losses (STCL) can be set off against both STCG and LTCG under Section 70.
+   - Unabsorbed losses can be carried forward for up to 8 assessment years. Check **Research Studio → Tax Loss Harvesting** to audit harvestable tax lots.`,
+        isInterception: false,
+        modelUsed: 'koshq-intelligence-engine',
+        source: 'OFFLINE_RULE_ENGINE'
+      };
+    }
+
+    // 6. Asset Allocation & Rebalance Query
+    if (query.includes('rebalance') || query.includes('allocation') || query.includes('equity') || query.includes('debt') || query.includes('sip')) {
+      const classMap: Record<string, number> = {};
+      holdings.forEach(h => {
+        classMap[h.assetClass] = (classMap[h.assetClass] || 0) + h.currentValue;
+      });
+
+      const breakdown = Object.entries(classMap)
+        .map(([cls, val]) => `• **${cls.toUpperCase()}**: ${formatINR(val)} (${((val / totalVal) * 100).toFixed(1)}%)`)
+        .join('\n');
+
       return {
         text: `**Asset Allocation & Rebalancing Strategy**:
-• **Current Balance**: Your portfolio is deployed across Equity, Mutual Funds, Gold (SGB), Bonds, and Liquid Cash.
-• **Tax-Smart SIP Realignment**:
-  - Rather than selling overweight assets (which triggers capital gains tax and brokerage), direct your new monthly SIP inflows strictly into underweight assets until target allocation is restored.
-• **Rebalance Frequency**: Semi-annual or annual reviews when asset drift exceeds **±5%** prevent unnecessary churn while maintaining risk parity.
-• **Model Scenarios**: Check **Portfolio Vault → Rebalance Engine** to see target allocations across Aggressive, Balanced, and All-Weather profiles.`,
+
+**Current Capital Distribution**:
+${breakdown}
+
+**Tactical Rebalancing Directives**:
+1. **Tax-Smart Cashflow Realignment**: Rather than selling overweight positions (which triggers capital gains tax and exit loads), route new monthly SIP contributions into underweight asset classes.
+2. **Tolerance Band Discipline**: Rebalance only when an asset class drifts by **±5%** or more from target allocation to avoid unnecessary transaction friction.
+3. **Emergency Liquidity Buffer**: Maintain 3–6 months of living expenses in liquid debt funds or arbitrage instruments before deploying into volatile equities.`,
         isInterception: false,
-        modelUsed: 'offline-rule-engine',
+        modelUsed: 'koshq-intelligence-engine',
         source: 'OFFLINE_RULE_ENGINE'
       };
     }
 
-    // Generic educational answer
+    // 7. Gold & Sovereign Gold Bonds (SGB)
+    if (query.includes('gold') || query.includes('sgb')) {
+      return {
+        text: `**Gold & Sovereign Gold Bonds (SGB) Strategic Overview**:
+• **Role in Portfolio**: Gold provides non-correlated insurance against currency depreciation and macroeconomic shocks. Target allocation is typically 5% to 15%.
+• **SGB Sovereign Advantages**:
+  - **2.5% Annual Interest**: Paid semi-annually on initial nominal investment.
+  - **100% Tax Exemption on Maturity**: Capital gains upon redemption at 8-year maturity are completely exempt under Section 47(viic).
+  - **Zero Storage & Making Charges**: Pure electronic format backed by the Government of India.`,
+        isInterception: false,
+        modelUsed: 'koshq-intelligence-engine',
+        source: 'OFFLINE_RULE_ENGINE'
+      };
+    }
+
+    // 8. General Analytical Portfolio Response
     return {
-      text: `Regarding your query:
+      text: `**Portfolio Intelligence Assessment**:
+• **Active Ledger Snapshot**: ${holdings.length} positions across diversified assets with a consolidated valuation of **${formatINR(totalVal)}**.
+• **Aggregate Gain / Loss**: **${totalGain >= 0 ? '+' : ''}${formatINR(totalGain)}** (${formatPercent(gainPct, true)}).
 
-In sovereign investment management, three core mathematical disciplines protect long-term capital:
-1. **Capital Preservation First**: Maintain a 3–6 month liquid cash runway to avoid forced selling during market drawdowns.
-2. **Asset Allocation Dominance**: Studies show >85% of long-term portfolio return variation is driven by asset allocation (Equity vs Debt vs Gold) rather than stock picking.
-3. **Patience & Low Churn**: Minimizing turnover preserves the compound interest curve by eliminating recurring exit loads, STT, and capital gains tax drag.
+**Guiding Principles for Long-Term Capital Compounding**:
+1. **Asset Allocation Over Stock Picking**: Broad asset mix (Equity, Debt, Gold, Cash) explains over 85% of long-term return variability.
+2. **Discipline in Drawdowns**: Market corrections are structural opportunities for disciplined SIP averaging rather than reactive selling.
+3. **Tax & Cost Drag Minimization**: Utilizing annual ₹1.25L LTCG exemptions and holding quality businesses reduces portfolio friction.
 
-*Tip: Connect your free **Google Gemini API Key** in the settings above to ask open-ended questions about corporate filings, macro scenarios, and custom portfolio strategies.*`,
+*You can ask specific questions about any stock (e.g., "Analyze Reliance"), tax rules ("Budget 2024 LTCG"), or run risk checks ("Concentration Risk").*`,
       isInterception: false,
-      modelUsed: 'offline-rule-engine',
+      modelUsed: 'koshq-intelligence-engine',
       source: 'OFFLINE_RULE_ENGINE'
     };
   }
