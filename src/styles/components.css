@@ -677,7 +677,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--density-gap);
-  margin-bottom: 12px;
+  margin: 0;
 }
 
 .metric-card {

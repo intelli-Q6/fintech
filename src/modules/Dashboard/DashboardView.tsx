@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   ArrowRight,
   Sliders,
-  Calculator,
   Wallet,
   Lock,
   ChevronDown,
@@ -234,6 +233,73 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
+          {/* Quick Portfolio Composition & Liquidity Strip (Uses Blank Space) */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              gap: 8,
+              flex: '1 1 340px',
+              maxWidth: 480,
+              minWidth: 260,
+              padding: '10px 16px',
+              background: 'var(--bg-subtle, rgba(255,255,255,0.02))',
+              border: '1px solid var(--border-subtle, rgba(255,255,255,0.06))',
+              borderRadius: 'var(--radius-sm, 8px)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+              <span>Asset Allocation & Stability</span>
+              <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>
+                {growthPct}% Growth • {stabilityPct}% Defensive
+              </span>
+            </div>
+
+            {/* Segmented Distribution Pill Bar */}
+            <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', gap: 2, background: 'rgba(0,0,0,0.1)' }}>
+              {donutSegments.map(seg => {
+                const pct = liveTotalValue > 0 ? (seg.value / liveTotalValue) * 100 : 0;
+                if (pct <= 0) return null;
+                return (
+                  <div
+                    key={seg.name}
+                    title={`${seg.name}: ${formatINR(seg.value)} (${pct.toFixed(1)}%)`}
+                    style={{
+                      width: `${pct}%`,
+                      backgroundColor: seg.color,
+                      transition: 'width 0.4s ease'
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Quick Stat Chips */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: '11px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ color: 'var(--text-muted)' }}>Liquid Cash:</span>
+                <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                  {formatINR(classTotals['cash'] || 0, { compact: true })}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ color: 'var(--text-muted)' }}>Defensive (Debt+Gold):</span>
+                <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                  {formatINR((classTotals['bond'] || 0) + (classTotals['govt_scheme'] || 0) + (classTotals['gold'] || 0), { compact: true })}
+                </strong>
+              </div>
+              {topHoldings[0] && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Top Asset:</span>
+                  <span style={{ color: 'var(--color-gain)', fontWeight: 600 }}>
+                    {topHoldings[0].symbol.split('.')[0]} ({topHoldings[0].weight.toFixed(0)}%)
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Quick Analytical Gateways */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <button
@@ -243,14 +309,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             >
               <Sliders size={12} />
               <span>Stress Lab</span>
-            </button>
-            <button
-              onClick={() => onNavigate('calculators')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '11px', padding: '6px 12px', gap: 6, height: 32 }}
-            >
-              <Calculator size={12} />
-              <span>Calculators</span>
             </button>
           </div>
         </div>
