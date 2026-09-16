@@ -368,11 +368,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         ) : (
           <button
             onClick={onOpenAuth}
-            className="btn btn-secondary btn-sm"
-            style={{ gap: 6, padding: '5px 10px', fontSize: '11px' }}
+            className="btn-auth-signature"
             title="Log In / Register"
           >
-            <User size={12} style={{ color: 'var(--accent-primary, #0ea5e9)' }} />
+            <User size={12} />
             <span>Log In/Register</span>
           </button>
         )}

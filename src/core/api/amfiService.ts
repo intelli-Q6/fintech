@@ -80,9 +80,19 @@ class AMFIService {
     }
 
     try {
-      const response = await fetch(`https://api.mfapi.in/mf/${schemeCode}`);
-      if (!response.ok) {
-        throw new Error(`AMFI API returned HTTP ${response.status}`);
+      // Primary Route: Backend serverless proxy (/api/amfi)
+      let response: Response;
+      try {
+        response = await fetch(`/api/amfi?scheme=${encodeURIComponent(schemeCode)}`);
+        if (!response.ok) {
+          throw new Error(`Proxy HTTP ${response.status}`);
+        }
+      } catch (proxyErr) {
+        // Fallback: Direct public endpoint if running offline / static preview
+        response = await fetch(`https://api.mfapi.in/mf/${schemeCode}`);
+        if (!response.ok) {
+          throw new Error(`AMFI API returned HTTP ${response.status}`);
+        }
       }
 
       const data = await response.json();
@@ -140,8 +150,15 @@ class AMFIService {
     if (!query || query.trim().length < 2) return [];
 
     try {
-      const response = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query.trim())}`);
-      if (!response.ok) return [];
+      // Primary Route: Backend serverless proxy (/api/amfi?search=...)
+      let response: Response;
+      try {
+        response = await fetch(`/api/amfi?search=${encodeURIComponent(query.trim())}`);
+        if (!response.ok) throw new Error(`Proxy HTTP ${response.status}`);
+      } catch {
+        response = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query.trim())}`);
+        if (!response.ok) return [];
+      }
 
       const results: AMFISchemeSearchItem[] = await response.json();
       return results.slice(0, 15);

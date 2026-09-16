@@ -1298,3 +1298,67 @@
   border-left: 1px solid var(--border-default);
   transform: rotate(45deg);
 }
+
+/* Signature Log In / Register Button (Distinct in both Light and Dark modes) */
+.btn-auth-signature {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-sm, 6px);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.14) 0%, rgba(99, 102, 241, 0.18) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(14, 165, 233, 0.15);
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.btn-auth-signature:hover {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25) 0%, rgba(99, 102, 241, 0.32) 100%);
+  border-color: rgba(56, 189, 248, 0.8);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
+}
+
+[data-mode="light"] .btn-auth-signature {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+  border: 1px solid #7dd3fc;
+  color: #0369a1;
+  box-shadow: 0 1px 3px rgba(3, 105, 161, 0.12);
+}
+
+[data-mode="light"] .btn-auth-signature:hover {
+  background: linear-gradient(135deg, #e0f2fe 0%, #c7d2fe 100%);
+  border-color: #0284c7;
+  color: #0c4a6e;
+  box-shadow: 0 2px 8px rgba(3, 105, 161, 0.22);
+  transform: translateY(-1px);
+}
+
+/* Market Mood Indicator (MMI) Header Card Interactive Micro-Interactions */
+.mmi-header-card {
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.mmi-header-card:hover {
+  background: var(--bg-card-hover, rgba(255, 255, 255, 0.05)) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+.mmi-header-card:active {
+  transform: translateY(0);
+}
+
+[data-mode="light"] .mmi-header-card:hover {
+  background: #ffffff !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.12) !important;
+}
+

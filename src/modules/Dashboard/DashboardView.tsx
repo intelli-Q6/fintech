@@ -195,7 +195,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Center: Market Mood Indicator (MMI) - At Indicated Place */}
         <MMIHeaderWidget
-          value={10.36}
           onClick={() => setIsMMIOpen(true)}
         />
 
@@ -512,11 +511,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Market Mood Index Detail Modal */}
+      {/* Market Mood Indicator (MMI) Detail Modal */}
       <MMIModal
         isOpen={isMMIOpen}
         onClose={() => setIsMMIOpen(false)}
-        value={10.36}
       />
     </div>
   );

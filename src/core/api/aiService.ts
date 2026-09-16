@@ -143,36 +143,31 @@ Explain that under SEBI regulations you cannot give buy/sell recommendations, th
         }
       };
 
-      const directEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.defaultModel}:generateContent?key=${apiKey}`;
-
       let response: Response;
-      let usedProxy = false;
+      let usedProxy = true;
 
+      // Primary secure route: Backend serverless proxy (/api/gemini)
       try {
-        // Attempt direct client-side call first (zero-egress to Google)
+        response = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apiKey,
+            model: this.defaultModel,
+            contents: conversationHistory,
+            systemInstruction: { parts: [{ text: systemInstruction }] }
+          })
+        });
+      } catch (proxyErr) {
+        console.warn('Backend proxy /api/gemini unavailable (e.g. offline dev). Trying direct fallback...', proxyErr);
+        // Fallback for offline local dev if serverless functions are not running
+        const directEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.defaultModel}:generateContent?key=${apiKey}`;
         response = await fetch(directEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestPayload)
         });
-      } catch (directErr) {
-        console.warn('Direct Gemini API call blocked or failed (e.g. ad-blocker / network). Falling back to serverless proxy /api/gemini...', directErr);
-        // Fallback to Vercel Serverless proxy to bypass client-side extensions/ad-blockers
-        try {
-          response = await fetch('/api/gemini', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              apiKey,
-              model: this.defaultModel,
-              contents: conversationHistory,
-              systemInstruction: { parts: [{ text: systemInstruction }] }
-            })
-          });
-          usedProxy = true;
-        } catch (proxyErr: any) {
-          throw new Error(`Connection error: ${proxyErr?.message || 'Unable to reach Gemini directly or via proxy'}`);
-        }
+        usedProxy = false;
       }
 
       if (!response.ok) {
