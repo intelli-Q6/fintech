@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Holding } from '../../data/types';
 import { formatINR, formatPercent } from '../../core/math/xirr';
 import { MetricCard } from '../../components/MetricCard/MetricCard';
@@ -10,10 +10,6 @@ import {
   ShieldCheck,
   ArrowRight,
   Sliders,
-  Wallet,
-  Lock,
-  ChevronDown,
-  ChevronUp,
   ChevronRight
 } from 'lucide-react';
 
@@ -29,7 +25,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigate
 }) => {
   const { quotes } = useMarketQuotes();
-  const [showPhilosophyModal, setShowPhilosophyModal] = useState(false);
 
   // Compute live valuation across all holdings
   const liveTotalValue = holdings.reduce((sum, h) => {
@@ -141,59 +136,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </div>
           <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-            High-level sovereign wealth intelligence • Client-side private ledger
+            Real-time multi-asset wealth intelligence & portfolio command
           </p>
-        </div>
-
-        {/* Primary Action Button to Full Vault */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button
-            onClick={() => setShowPhilosophyModal(!showPhilosophyModal)}
-            className="btn btn-ghost btn-sm"
-            style={{ fontSize: '11px', padding: '5px 10px', gap: 4, height: 28, color: 'var(--text-muted)' }}
-            title="Click to view Sovereign Client-Side Governance Principles"
-          >
-            <Lock size={11} style={{ color: 'var(--accent-primary)' }} />
-            <span>Zero-Egress</span>
-            {showPhilosophyModal ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-          </button>
-          <button
-            onClick={() => onNavigate('vault')}
-            className="btn btn-primary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 14px', fontSize: '12px', fontWeight: 600, height: 28 }}
-          >
-            <Wallet size={12} />
-            <span>Portfolio Vault</span>
-            <ArrowRight size={12} />
-          </button>
         </div>
       </div>
-
-      {/* Philosophy Accordion (Subtle & optional) */}
-      {showPhilosophyModal && (
-        <div
-          className="animate-fade-in"
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '12px 16px',
-            fontSize: '11px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <div style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <ShieldCheck size={13} style={{ color: 'var(--accent-primary)' }} />
-            <span>Sovereign Client-Side Platform Principles</span>
-          </div>
-          <p style={{ color: 'var(--text-secondary)', margin: '2px 0 0 0', lineHeight: 1.4 }}>
-            KoshQ operates strictly client-side in your browser. No portfolio data, broker credentials, or financial records leave your device. All valuation, XIRR calculations, tax models, and crisis simulations run directly on your CPU.
-          </p>
-        </div>
-      )}
 
       {/* 2. Hero Net Worth Banner */}
       <div
