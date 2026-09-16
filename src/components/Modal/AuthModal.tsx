@@ -69,12 +69,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
       padding: '16px'
     }}>
       <div style={{
-        backgroundColor: 'var(--bg-surface-elevated, var(--bg-surface))',
-        border: '1px solid var(--border-default)',
-        borderRadius: '12px',
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '16px',
         width: '100%',
-        maxWidth: '460px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+        maxWidth: '450px',
+        boxShadow: 'var(--shadow-lg)',
         overflow: 'hidden',
         color: 'var(--text-primary)'
       }}>
@@ -84,27 +84,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '20px 24px 16px',
-          borderBottom: '1px solid var(--border-subtle, #1e293b)'
+          borderBottom: '1px solid var(--border-subtle)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              background: 'var(--accent-surface)',
+              border: '1px solid var(--accent-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff'
+              color: 'var(--accent-primary)'
             }}>
-              <ShieldCheck size={18} />
+              <User size={18} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--text, #f8fafc)' }}>
-                KoshQ Cloud Sync & Account
+              <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                Log In / Register
               </h3>
-              <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>
-                PostgreSQL Row-Level Security • Multi-Device Sync
+              <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Secure Cloud Sync • Multi-Device Portfolio Access
               </p>
             </div>
           </div>
@@ -113,28 +114,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             style={{
               background: 'transparent',
               border: 'none',
-              color: 'var(--text-muted, #94a3b8)',
+              color: 'var(--text-muted)',
               cursor: 'pointer',
-              padding: '6px'
+              padding: '6px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background var(--transition-fast), color var(--transition-fast)'
             }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-subtle)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+            title="Close"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Cloud Config Warning (If keys not yet configured) */}
+        {/* Cloud Config Notice (If keys not yet configured) */}
         {!hasCloudConfig && (
           <div style={{
             margin: '16px 24px 0',
-            padding: '12px 14px',
+            padding: '10px 14px',
             borderRadius: '8px',
-            backgroundColor: 'rgba(234, 179, 8, 0.1)',
-            border: '1px solid rgba(234, 179, 8, 0.3)',
-            fontSize: '0.8rem',
-            color: '#facc15',
-            lineHeight: 1.4
+            backgroundColor: 'var(--color-warning-bg)',
+            border: '1px solid var(--color-warning-border)',
+            fontSize: '0.78rem',
+            color: 'var(--color-warning)',
+            lineHeight: 1.45
           }}>
-            <strong>Supabase Keys Pending:</strong> Set <code style={{ color: '#fff' }}>VITE_SUPABASE_URL</code> and <code style={{ color: '#fff' }}>VITE_SUPABASE_ANON_KEY</code> in your environment variables to enable live cloud authentication. Operating currently in sovereign local guest mode.
+            <strong>Supabase Setup Pending:</strong> Cloud authentication requires <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>VITE_SUPABASE_URL</code> and <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>VITE_SUPABASE_ANON_KEY</code>. You are currently operating in local ledger mode.
           </div>
         )}
 
@@ -144,7 +153,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           gridTemplateColumns: '1fr 1fr 1fr',
           padding: '4px',
           margin: '16px 24px 0',
-          backgroundColor: 'var(--background, #020617)',
+          backgroundColor: 'var(--bg-subtle)',
+          border: '1px solid var(--border-subtle)',
           borderRadius: '8px',
           gap: '4px'
         }}>
@@ -153,13 +163,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             onClick={() => { setTab('signin'); clearAuthError(); }}
             style={{
               padding: '8px 12px',
-              border: 'none',
+              border: tab === 'signin' ? '1px solid var(--border-subtle)' : '1px solid transparent',
               borderRadius: '6px',
-              backgroundColor: tab === 'signin' ? 'var(--surface-active, #1e293b)' : 'transparent',
-              color: tab === 'signin' ? 'var(--text, #fff)' : 'var(--text-muted, #94a3b8)',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              cursor: 'pointer'
+              backgroundColor: tab === 'signin' ? 'var(--bg-surface)' : 'transparent',
+              color: tab === 'signin' ? 'var(--text-primary)' : 'var(--text-muted)',
+              fontWeight: tab === 'signin' ? 700 : 500,
+              fontSize: '0.8125rem',
+              cursor: 'pointer',
+              boxShadow: tab === 'signin' ? 'var(--shadow-sm)' : 'none',
+              transition: 'all var(--transition-fast)'
             }}
           >
             Sign In
@@ -169,13 +181,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             onClick={() => { setTab('signup'); clearAuthError(); }}
             style={{
               padding: '8px 12px',
-              border: 'none',
+              border: tab === 'signup' ? '1px solid var(--border-subtle)' : '1px solid transparent',
               borderRadius: '6px',
-              backgroundColor: tab === 'signup' ? 'var(--surface-active, #1e293b)' : 'transparent',
-              color: tab === 'signup' ? 'var(--text, #fff)' : 'var(--text-muted, #94a3b8)',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              cursor: 'pointer'
+              backgroundColor: tab === 'signup' ? 'var(--bg-surface)' : 'transparent',
+              color: tab === 'signup' ? 'var(--text-primary)' : 'var(--text-muted)',
+              fontWeight: tab === 'signup' ? 700 : 500,
+              fontSize: '0.8125rem',
+              cursor: 'pointer',
+              boxShadow: tab === 'signup' ? 'var(--shadow-sm)' : 'none',
+              transition: 'all var(--transition-fast)'
             }}
           >
             Register
@@ -185,13 +199,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             onClick={() => { setTab('magic'); clearAuthError(); }}
             style={{
               padding: '8px 12px',
-              border: 'none',
+              border: tab === 'magic' ? '1px solid var(--border-subtle)' : '1px solid transparent',
               borderRadius: '6px',
-              backgroundColor: tab === 'magic' ? 'var(--surface-active, #1e293b)' : 'transparent',
-              color: tab === 'magic' ? 'var(--text, #fff)' : 'var(--text-muted, #94a3b8)',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              cursor: 'pointer'
+              backgroundColor: tab === 'magic' ? 'var(--bg-surface)' : 'transparent',
+              color: tab === 'magic' ? 'var(--text-primary)' : 'var(--text-muted)',
+              fontWeight: tab === 'magic' ? 700 : 500,
+              fontSize: '0.8125rem',
+              cursor: 'pointer',
+              boxShadow: tab === 'magic' ? 'var(--shadow-sm)' : 'none',
+              transition: 'all var(--transition-fast)'
             }}
           >
             Magic Link
@@ -207,10 +223,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               gap: '8px',
               padding: '10px 12px',
               marginBottom: '16px',
-              borderRadius: '6px',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
+              borderRadius: '8px',
+              backgroundColor: 'var(--color-loss-bg)',
+              border: '1px solid var(--color-loss-border)',
+              color: 'var(--color-loss)',
               fontSize: '0.8rem'
             }}>
               <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -220,28 +236,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
           {magicSent ? (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <CheckCircle2 size={42} style={{ color: '#10b981', margin: '0 auto 12px' }} />
-              <h4 style={{ margin: '0 0 8px', color: '#fff', fontSize: '1rem' }}>Magic Link Dispatched</h4>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>
-                We sent an instant sign-in link to <strong>{email}</strong>. Click the link in your email to access your vault.
+              <CheckCircle2 size={42} style={{ color: 'var(--color-gain)', margin: '0 auto 12px' }} />
+              <h4 style={{ margin: '0 0 8px', color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 700 }}>Magic Link Dispatched</h4>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                We sent an instant sign-in link to <strong>{email}</strong>. Click the link in your email to access your portfolio.
               </p>
             </div>
           ) : signupSuccess ? (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <CheckCircle2 size={42} style={{ color: '#10b981', margin: '0 auto 12px' }} />
-              <h4 style={{ margin: '0 0 8px', color: '#fff', fontSize: '1rem' }}>Account Created Successfully</h4>
-              <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: '#94a3b8' }}>
-                Your isolated multi-tenant profile is provisioned with Row-Level Security.
+              <CheckCircle2 size={42} style={{ color: 'var(--color-gain)', margin: '0 auto 12px' }} />
+              <h4 style={{ margin: '0 0 8px', color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 700 }}>Account Created Successfully</h4>
+              <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                Your isolated portfolio profile is provisioned with Row-Level Security.
               </p>
               <button
                 type="button"
                 onClick={onClose}
+                className="btn btn-primary"
                 style={{
-                  padding: '8px 20px',
-                  backgroundColor: 'var(--primary, #0284c7)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
+                  padding: '9px 22px',
+                  borderRadius: '8px',
                   fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: 'pointer'
@@ -251,14 +265,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               {tab === 'signup' && (
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted, #94a3b8)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
                     Full Name
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <User size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: '#64748b' }} />
+                    <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
                       type="text"
                       placeholder="e.g. Kshitij Anand"
@@ -267,25 +281,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                       style={{
                         width: '100%',
                         padding: '10px 12px 10px 38px',
-                        backgroundColor: 'var(--background, #020617)',
-                        border: '1px solid var(--border, #334155)',
-                        borderRadius: '6px',
-                        color: 'var(--text, #fff)',
+                        backgroundColor: 'var(--bg-subtle)',
+                        border: '1px solid var(--border-default)',
+                        borderRadius: '8px',
+                        color: 'var(--text-primary)',
                         fontSize: '0.85rem',
                         outline: 'none',
-                        boxSizing: 'border-box'
+                        boxSizing: 'border-box',
+                        transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)'
                       }}
+                      onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.boxShadow = '0 0 0 1px var(--accent-primary)'; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.boxShadow = 'none'; }}
                     />
                   </div>
                 </div>
               )}
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted, #94a3b8)', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
                   Work / Personal Email
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <Mail size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: '#64748b' }} />
+                  <Mail size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   <input
                     type="email"
                     required
@@ -295,14 +312,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                     style={{
                       width: '100%',
                       padding: '10px 12px 10px 38px',
-                      backgroundColor: 'var(--background, #020617)',
-                      border: '1px solid var(--border, #334155)',
-                      borderRadius: '6px',
-                      color: 'var(--text, #fff)',
+                      backgroundColor: 'var(--bg-subtle)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: '8px',
+                      color: 'var(--text-primary)',
                       fontSize: '0.85rem',
                       outline: 'none',
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)'
                     }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.boxShadow = '0 0 0 1px var(--accent-primary)'; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.boxShadow = 'none'; }}
                   />
                 </div>
               </div>
@@ -310,12 +330,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               {tab !== 'magic' && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted, #94a3b8)' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                       Password
                     </label>
                   </div>
                   <div style={{ position: 'relative' }}>
-                    <Lock size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: '#64748b' }} />
+                    <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
                       type="password"
                       required
@@ -325,14 +345,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                       style={{
                         width: '100%',
                         padding: '10px 12px 10px 38px',
-                        backgroundColor: 'var(--background, #020617)',
-                        border: '1px solid var(--border, #334155)',
-                        borderRadius: '6px',
-                        color: 'var(--text, #fff)',
+                        backgroundColor: 'var(--bg-subtle)',
+                        border: '1px solid var(--border-default)',
+                        borderRadius: '8px',
+                        color: 'var(--text-primary)',
                         fontSize: '0.85rem',
                         outline: 'none',
-                        boxSizing: 'border-box'
+                        boxSizing: 'border-box',
+                        transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)'
                       }}
+                      onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.boxShadow = '0 0 0 1px var(--accent-primary)'; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.boxShadow = 'none'; }}
                     />
                   </div>
                 </div>
@@ -346,35 +369,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  marginTop: '10px',
-                  padding: '12px',
-                  backgroundColor: hasCloudConfig ? 'var(--primary, #0284c7)' : '#475569',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '6px',
+                  marginTop: '8px',
+                  padding: '11px',
+                  backgroundColor: hasCloudConfig ? 'var(--accent-primary)' : 'var(--bg-subtle)',
+                  color: hasCloudConfig ? '#ffffff' : 'var(--text-muted)',
+                  border: hasCloudConfig ? 'none' : '1px solid var(--border-subtle)',
+                  borderRadius: '8px',
                   fontWeight: 600,
                   fontSize: '0.875rem',
                   cursor: hasCloudConfig && !loading ? 'pointer' : 'not-allowed',
-                  opacity: loading ? 0.7 : 1
+                  opacity: loading ? 0.7 : 1,
+                  boxShadow: hasCloudConfig ? '0 2px 6px var(--accent-glow)' : 'none',
+                  transition: 'all var(--transition-fast)'
                 }}
               >
-                {loading ? 'Authenticating...' : tab === 'signin' ? 'Sign In to Account' : tab === 'signup' ? 'Create Multi-Tenant Account' : 'Send Passwordless Link'}
+                {loading ? 'Authenticating...' : tab === 'signin' ? 'Sign In to KoshQ' : tab === 'signup' ? 'Create KoshQ Account' : 'Send Magic Link'}
                 <ArrowRight size={16} />
               </button>
 
               <div style={{
-                marginTop: '12px',
+                marginTop: '10px',
                 paddingTop: '12px',
-                borderTop: '1px solid var(--border-subtle, #1e293b)',
+                borderTop: '1px solid var(--border-subtle)',
                 fontSize: '0.75rem',
-                color: 'var(--text-muted, #64748b)',
+                color: 'var(--text-muted)',
                 textAlign: 'center',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px'
               }}>
-                <Sparkles size={12} style={{ color: '#0ea5e9' }} />
+                <ShieldCheck size={13} style={{ color: 'var(--accent-primary)' }} />
                 <span>Encrypted at rest with AES-256 • Database Row-Level Security</span>
               </div>
             </div>

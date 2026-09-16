@@ -329,7 +329,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 boxShadow: 'var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.25))',
                 zIndex: 999
               }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
                   {user.email}
                 </div>
                 <div style={{ fontSize: '10px', color: '#10b981', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -338,7 +338,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: 10 }}>
                   Quota: Free Tier (10 AI queries/day)
                 </div>
-                <div style={{ borderTop: '1px solid var(--border-subtle, #1e293b)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <button
                     onClick={async () => {
                       setMigrating(true);
