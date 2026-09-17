@@ -94,7 +94,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           aria-label="Toggle Navigation Menu"
         >
           <Menu size={18} />
-          <span>Menu</span>
+          <span className="mobile-menu-text">Menu</span>
         </button>
         <div className="mobile-brand">
           <KoshQLogo size={22} glow={true} />
@@ -103,7 +103,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Live Moving Macro Pulse Ticker (Continuous Infinite Marquee with Real-Time Quotes) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, marginRight: 8 }}>
+      <div className="command-ticker-section">
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, paddingRight: 4, position: 'relative' }} ref={popoverRef}>
           {/* Live Feed Beacon & Controller Button */}
           <button
@@ -311,8 +311,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 9px', fontSize: '11px' }}
               title="Cloud Vault Status"
             >
-              <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
-              <span style={{ maxWidth: 85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', flexShrink: 0 }} />
+              <span className="user-email-text">
                 {user.email?.split('@')[0]}
               </span>
             </button>
@@ -371,8 +371,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="btn-auth-signature"
             title="Log In / Register"
           >
-            <User size={12} />
-            <span>Log In/Register</span>
+            <User size={13} />
+            <span className="auth-btn-text">Log In</span>
           </button>
         )}
       </div>

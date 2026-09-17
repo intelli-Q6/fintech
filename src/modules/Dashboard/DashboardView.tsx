@@ -199,7 +199,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         />
 
         {/* Right: Actions (Stress Lab & KoshQ AI) - At Indicated Place */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="dashboard-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={() => onNavigate('workbench', 'scenarios')}
             className="btn btn-secondary btn-sm"
@@ -233,7 +233,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 2. Hero Net Worth Banner */}
       <div
-        className="terminal-card"
+        className="terminal-card hero-networth-card"
         style={{
           padding: '22px 26px',
           background: 'var(--bg-surface)',
@@ -293,10 +293,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Asset Allocation Bar (Executive 4-Category Pill Design) */}
           <div
+            className="dashboard-allocation-card"
             style={{
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center',
               gap: 12,
               flex: '1 1 420px',
               maxWidth: 580,

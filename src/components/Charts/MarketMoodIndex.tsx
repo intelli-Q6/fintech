@@ -524,6 +524,7 @@ export const MMIModal: React.FC<{
     >
       <div
         onClick={e => e.stopPropagation()}
+        className="mmi-modal-dialog"
         style={{
           maxWidth: 620,
           width: '100%',
@@ -643,6 +644,7 @@ export const MMIModal: React.FC<{
             {zonesList.map(z => (
               <div
                 key={z.name}
+                className="mmi-zone-row"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
