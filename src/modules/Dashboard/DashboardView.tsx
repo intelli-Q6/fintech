@@ -244,7 +244,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="hero-networth-container">
           {/* Left / Primary Wealth & Performance Section */}
           <div className="hero-wealth-stats">
-            {/* Top row: Net Worth Title & Val, plus Mobile Total Return in the pink space */}
+            {/* Top row: Net Worth Title & Val on Left, Total Returns on Right */}
             <div className="hero-stats-header">
               <div className="hero-stat-primary">
                 <div className="hero-stat-label">
@@ -253,65 +253,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="hero-networth-val">
                   {formatINR(liveTotalValue)}
                 </div>
-                {/* Mobile Today Delta Badge directly under Net Worth */}
-                {daysTotalChange !== 0 && (
-                  <div className="hero-today-badge-mobile">
-                    <span
-                      className={`delta-badge ${daysTotalChange >= 0 ? 'gain' : 'loss'}`}
-                      style={{ fontSize: '11px', padding: '2.5px 7px', borderRadius: 5, fontWeight: 600 }}
-                    >
-                      {daysTotalChange >= 0 ? '▲ +' : '▼ '}{formatINR(Math.abs(daysTotalChange))} ({daysChangePercent >= 0 ? '+' : ''}{daysChangePercent.toFixed(2)}%) Today
-                    </span>
-                  </div>
-                )}
               </div>
 
-              {/* Mobile-Only Right Column: Total Returns and XIRR directly below it */}
+              {/* Mobile-Only Right Column: Total Returns */}
               <div className="hero-mobile-return-stat">
                 <div className="hero-stat-label" style={{ textAlign: 'right' }}>
                   Total Returns
                 </div>
-                <div
-                  className="hero-mobile-return-val"
-                  style={{
-                    fontSize: '17px',
-                    fontWeight: 800,
-                    fontFamily: 'var(--font-mono)',
-                    color: liveTotalGain >= 0 ? 'var(--color-gain)' : 'var(--color-loss)',
-                    textAlign: 'right',
-                    lineHeight: 1.2
-                  }}
-                >
-                  {liveTotalGain >= 0 ? '+' : ''}{formatINR(liveTotalGain)}
-                  <span style={{ fontSize: '11px', display: 'block', fontWeight: 600, marginTop: 2 }}>
+                <div className="hero-mobile-return-val">
+                  <span>{liveTotalGain >= 0 ? '+' : ''}{formatINR(liveTotalGain)}</span>
+                  <span className="hero-mobile-return-pct">
                     ({formatPercent(liveGainPercent, true)})
                   </span>
                 </div>
+              </div>
+            </div>
 
-                {/* Mobile XIRR Badge: Placed directly below Total Returns (Mobile Only) */}
-                <div className="hero-xirr-mobile">
-                  <div
-                    className="hero-xirr-badge"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      padding: '2.5px 7px',
-                      borderRadius: 5,
-                      background: 'rgba(5, 150, 105, 0.08)',
-                      border: '1px solid rgba(5, 150, 105, 0.2)',
-                      fontSize: '10.5px'
-                    }}
-                    title="Portfolio Extended Internal Rate of Return (Benchmark: Nifty 50 TRI 14.4%)"
-                  >
-                    <TrendingUp size={10.5} style={{ color: 'var(--color-gain)' }} />
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>XIRR:</span>
-                    <strong style={{ color: 'var(--color-gain)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>16.82%</strong>
-                    <span className="hero-xirr-benchmark" style={{ fontSize: '9px', color: 'var(--color-gain)', fontWeight: 600, background: 'rgba(16, 185, 129, 0.12)', padding: '1px 4px', borderRadius: 4 }}>
-                      +2.4% vs Nifty
-                    </span>
-                  </div>
-                </div>
+            {/* Mobile-Only Badges Row: Today's delta badge on Left, Portfolio XIRR on Right (Guaranteed on the exact same line!) */}
+            <div className="hero-mobile-badges-row">
+              {daysTotalChange !== 0 && (
+                <span
+                  className={`delta-badge ${daysTotalChange >= 0 ? 'gain' : 'loss'}`}
+                  style={{ fontSize: '10.5px', padding: '2px 7px', borderRadius: 5, fontWeight: 600, whiteSpace: 'nowrap' }}
+                >
+                  {daysTotalChange >= 0 ? '▲ +' : '▼ '}{formatINR(Math.abs(daysTotalChange))} ({daysChangePercent >= 0 ? '+' : ''}{daysChangePercent.toFixed(2)}%) Today
+                </span>
+              )}
+
+              {/* Mobile XIRR Badge: Aligned right on the same line */}
+              <div
+                className="hero-xirr-badge"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3.5,
+                  padding: '2px 7px',
+                  borderRadius: 5,
+                  background: 'rgba(5, 150, 105, 0.08)',
+                  border: '1px solid rgba(5, 150, 105, 0.2)',
+                  fontSize: '10.5px',
+                  whiteSpace: 'nowrap'
+                }}
+                title="Portfolio Extended Internal Rate of Return (Benchmark: Nifty 50 TRI 14.4%)"
+              >
+                <TrendingUp size={10.5} style={{ color: 'var(--color-gain)' }} />
+                <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>XIRR:</span>
+                <strong style={{ color: 'var(--color-gain)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>16.82%</strong>
+                <span className="hero-xirr-benchmark" style={{ fontSize: '9px', color: 'var(--color-gain)', fontWeight: 600, background: 'rgba(16, 185, 129, 0.12)', padding: '1px 4px', borderRadius: 4 }}>
+                  +2.4%
+                </span>
               </div>
             </div>
 
