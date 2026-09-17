@@ -132,6 +132,34 @@
   justify-content: space-between;
 }
 
+/* Desktop View Only: Align KoshQ sidebar header box height with Pulse command-bar so bottom border forms a uniform line */
+@media (min-width: 1025px) {
+  .sidebar-header {
+    height: 54px;
+    min-height: 54px;
+    max-height: 54px;
+    box-sizing: border-box;
+    padding: 0 18px;
+  }
+
+  .sidebar.collapsed .sidebar-header {
+    height: 54px;
+    min-height: 54px;
+    max-height: 54px;
+    box-sizing: border-box;
+    padding: 0 6px;
+  }
+
+  .command-bar {
+    height: 54px;
+    min-height: 54px;
+    max-height: 54px;
+    box-sizing: border-box;
+    padding: 0 18px;
+    flex-wrap: nowrap;
+  }
+}
+
 .sidebar-collapse-btn {
   background: transparent;
   border: none;
