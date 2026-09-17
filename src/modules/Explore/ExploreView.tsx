@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DEMO_STOCKS, DEMO_MUTUAL_FUNDS, DEMO_BONDS, DEMO_ETFS, generateSyntheticHistory } from '../../data/demoData';
 import { StockDetail, MutualFundDetail, BondDetail, ETFDetail, Holding } from '../../data/types';
 import { formatINR, formatPercent } from '../../core/math/xirr';
@@ -16,7 +16,10 @@ import {
   Plus,
   Check,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Filter,
+  RotateCcw,
+  SlidersHorizontal
 } from 'lucide-react';
 import { MiniSparkline } from '../../components/Charts/MiniSparkline';
 import { useMarketQuotes } from '../../core/market/useMarketQuotes';
@@ -40,6 +43,125 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ onSelectHolding, onUpd
   const [liveRegistryResults, setLiveRegistryResults] = useState<LiveMarketSearchResult[]>([]);
   const [isSearchingLive, setIsSearchingLive] = useState(false);
   const [addedSymbols, setAddedSymbols] = useState<string[]>([]);
+
+  // Tab 1: All Instruments Filters
+  const [allClasses, setAllClasses] = useState<{ stocks: boolean; mfs: boolean; etfs: boolean; bonds: boolean }>({
+    stocks: true,
+    mfs: true,
+    etfs: true,
+    bonds: true,
+  });
+  const [allPerformance, setAllPerformance] = useState<'all' | 'gainers' | 'losers'>('all');
+  const [allSortBy, setAllSortBy] = useState<'default' | 'dayChangeDesc' | 'dayChangeAsc' | 'priceDesc' | 'priceAsc'>('default');
+
+  // Tab 2: Equities Filters
+  const [stockCap, setStockCap] = useState<'all' | 'Large Cap' | 'Mid Cap' | 'Small Cap'>('all');
+  const [stockSector, setStockSector] = useState<string>('all');
+  const [stockPE, setStockPE] = useState<'all' | 'under25' | '25to45' | 'over45'>('all');
+  const [stockROE, setStockROE] = useState<'all' | 'above15' | 'above25'>('all');
+  const [stockDebt, setStockDebt] = useState<'all' | 'low' | 'zero'>('all');
+  const [stockSortBy, setStockSortBy] = useState<'marketCapDesc' | 'priceDesc' | 'priceAsc' | 'dayChangeDesc' | 'dayChangeAsc' | 'peAsc' | 'roeDesc' | 'betaAsc'>('marketCapDesc');
+  const [stockActivePreset, setStockActivePreset] = useState<string | null>(null);
+
+  // Tab 3: Mutual Funds Filters
+  const [mfCategory, setMfCategory] = useState<string>('all');
+  const [mfTER, setMfTER] = useState<'all' | 'ultra_low' | 'low' | 'standard'>('all');
+  const [mfReturnHorizon, setMfReturnHorizon] = useState<'all' | '1y_35' | '3y_20' | '5y_20' | '5y_25'>('all');
+  const [mfSharpe, setMfSharpe] = useState<'all' | 'above1.2' | 'above1.5'>('all');
+  const [mfSortBy, setMfSortBy] = useState<'aumDesc' | 'cagr5yDesc' | 'cagr3yDesc' | 'cagr1yDesc' | 'terAsc' | 'navDesc'>('aumDesc');
+  const [mfActivePreset, setMfActivePreset] = useState<string | null>(null);
+
+  // Tab 4: ETFs Filters
+  const [etfCategory, setEtfCategory] = useState<string>('all');
+  const [etfPricing, setEtfPricing] = useState<'all' | 'discount' | 'fair_premium'>('all');
+  const [etfExpense, setEtfExpense] = useState<'all' | 'under0.2' | 'under0.5'>('all');
+  const [etfSortBy, setEtfSortBy] = useState<'aumDesc' | 'dayChangeDesc' | 'terAsc' | 'priceDesc'>('aumDesc');
+  const [etfActivePreset, setEtfActivePreset] = useState<string | null>(null);
+
+  // Tab 5: Bonds Filters
+  const [bondIssuer, setBondIssuer] = useState<string>('all');
+  const [bondRating, setBondRating] = useState<string>('all');
+  const [bondPayout, setBondPayout] = useState<string>('all');
+  const [bondYTM, setBondYTM] = useState<'all' | 'above7.0' | 'above7.5' | 'above8.0'>('all');
+  const [bondSortBy, setBondSortBy] = useState<'ytmDesc' | 'couponDesc' | 'priceAsc' | 'priceDesc'>('ytmDesc');
+  const [bondActivePreset, setBondActivePreset] = useState<string | null>(null);
+
+  // Filter Reset Handlers
+  const resetAllFilters = () => {
+    setAllClasses({ stocks: true, mfs: true, etfs: true, bonds: true });
+    setAllPerformance('all');
+    setAllSortBy('default');
+  };
+
+  const resetStockFilters = () => {
+    setStockCap('all');
+    setStockSector('all');
+    setStockPE('all');
+    setStockROE('all');
+    setStockDebt('all');
+    setStockSortBy('marketCapDesc');
+    setStockActivePreset(null);
+  };
+
+  const resetMFFilters = () => {
+    setMfCategory('all');
+    setMfTER('all');
+    setMfReturnHorizon('all');
+    setMfSharpe('all');
+    setMfSortBy('aumDesc');
+    setMfActivePreset(null);
+  };
+
+  const resetETFFilters = () => {
+    setEtfCategory('all');
+    setEtfPricing('all');
+    setEtfExpense('all');
+    setEtfSortBy('aumDesc');
+    setEtfActivePreset(null);
+  };
+
+  const resetBondFilters = () => {
+    setBondIssuer('all');
+    setBondRating('all');
+    setBondPayout('all');
+    setBondYTM('all');
+    setBondSortBy('ytmDesc');
+    setBondActivePreset(null);
+  };
+
+  // Active Filter Counts
+  const allActiveFilterCount =
+    (allPerformance !== 'all' ? 1 : 0) +
+    (allSortBy !== 'default' ? 1 : 0) +
+    (!allClasses.stocks || !allClasses.mfs || !allClasses.etfs || !allClasses.bonds ? 1 : 0);
+
+  const stockActiveFilterCount =
+    (stockCap !== 'all' ? 1 : 0) +
+    (stockSector !== 'all' ? 1 : 0) +
+    (stockPE !== 'all' ? 1 : 0) +
+    (stockROE !== 'all' ? 1 : 0) +
+    (stockDebt !== 'all' ? 1 : 0) +
+    (stockSortBy !== 'marketCapDesc' ? 1 : 0);
+
+  const mfActiveFilterCount =
+    (mfCategory !== 'all' ? 1 : 0) +
+    (mfTER !== 'all' ? 1 : 0) +
+    (mfReturnHorizon !== 'all' ? 1 : 0) +
+    (mfSharpe !== 'all' ? 1 : 0) +
+    (mfSortBy !== 'aumDesc' ? 1 : 0);
+
+  const etfActiveFilterCount =
+    (etfCategory !== 'all' ? 1 : 0) +
+    (etfPricing !== 'all' ? 1 : 0) +
+    (etfExpense !== 'all' ? 1 : 0) +
+    (etfSortBy !== 'aumDesc' ? 1 : 0);
+
+  const bondActiveFilterCount =
+    (bondIssuer !== 'all' ? 1 : 0) +
+    (bondRating !== 'all' ? 1 : 0) +
+    (bondPayout !== 'all' ? 1 : 0) +
+    (bondYTM !== 'all' ? 1 : 0) +
+    (bondSortBy !== 'ytmDesc' ? 1 : 0);
 
   // Fetch initial live quotes on mount to ensure fresh prices
   useEffect(() => {
@@ -306,48 +428,281 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ onSelectHolding, onUpd
     setAddedSymbols(prev => [...prev, item.symbol]);
   };
 
+  // Dynamic sector & category option lists from data
+  const uniqueStockSectors = useMemo(() => Array.from(new Set(DEMO_STOCKS.map(s => s.sector))).sort(), []);
+  const uniqueMFCategories = useMemo(() => Array.from(new Set(DEMO_MUTUAL_FUNDS.map(m => m.category))).sort(), []);
+  const uniqueBondIssuers = useMemo(() => Array.from(new Set(DEMO_BONDS.map(b => b.issuerType))).sort(), []);
+  const uniqueBondRatings = useMemo(() => Array.from(new Set(DEMO_BONDS.map(b => b.creditRating))).sort(), []);
+
   // Comprehensive Search across EVERY asset class
   const query = searchTerm.trim().toLowerCase();
 
-  const filteredStocks = DEMO_STOCKS.filter(s =>
-    !query ||
-    s.name.toLowerCase().includes(query) ||
-    s.symbol.toLowerCase().includes(query) ||
-    s.sector.toLowerCase().includes(query) ||
-    s.isin.toLowerCase().includes(query) ||
-    s.marketCapType.toLowerCase().includes(query)
-  );
+  const filteredStocks = useMemo(() => {
+    let list = DEMO_STOCKS.filter(s => {
+      // Global Search
+      if (query && !(
+        s.name.toLowerCase().includes(query) ||
+        s.symbol.toLowerCase().includes(query) ||
+        s.sector.toLowerCase().includes(query) ||
+        s.isin.toLowerCase().includes(query) ||
+        s.marketCapType.toLowerCase().includes(query)
+      )) {
+        return false;
+      }
 
-  const filteredMFs = DEMO_MUTUAL_FUNDS.filter(mf =>
-    !query ||
-    mf.name.toLowerCase().includes(query) ||
-    mf.code.toLowerCase().includes(query) ||
-    mf.category.toLowerCase().includes(query) ||
-    mf.benchmark.toLowerCase().includes(query) ||
-    mf.fundManager.toLowerCase().includes(query) ||
-    mf.topHoldings.some(th => th.name.toLowerCase().includes(query))
-  );
+      // Equity-specific filters
+      if (stockCap !== 'all' && s.marketCapType !== stockCap) return false;
+      if (stockSector !== 'all' && s.sector !== stockSector) return false;
 
-  const filteredETFs = DEMO_ETFS.filter(etf =>
-    !query ||
-    etf.symbol.toLowerCase().includes(query) ||
-    etf.name.toLowerCase().includes(query) ||
-    etf.underlyingAsset.toLowerCase().includes(query) ||
-    etf.isin.toLowerCase().includes(query) ||
-    etf.category.toLowerCase().includes(query)
-  );
+      if (stockPE === 'under25' && s.peRatio >= 25) return false;
+      if (stockPE === '25to45' && (s.peRatio < 25 || s.peRatio > 45)) return false;
+      if (stockPE === 'over45' && s.peRatio <= 45) return false;
 
-  const filteredBonds = DEMO_BONDS.filter(b =>
-    !query ||
-    b.name.toLowerCase().includes(query) ||
-    b.isin.toLowerCase().includes(query) ||
-    b.issuerType.toLowerCase().includes(query) ||
-    b.creditRating.toLowerCase().includes(query) ||
-    b.couponRate.toString().includes(query) ||
-    b.maturityDate.toLowerCase().includes(query)
-  );
+      if (stockROE === 'above15' && s.roe < 15) return false;
+      if (stockROE === 'above25' && s.roe < 25) return false;
 
-  const totalMatches = filteredStocks.length + filteredMFs.length + filteredETFs.length + filteredBonds.length;
+      if (stockDebt === 'low' && s.debtToEquity >= 0.5) return false;
+      if (stockDebt === 'zero' && s.debtToEquity > 0) return false;
+
+      // In All tab, also respect allPerformance filter
+      if (activeAssetType === 'all') {
+        const live = quotes[s.symbol];
+        const dayPct = live ? live.dayChangePercent : s.dayChangePercent;
+        if (allPerformance === 'gainers' && dayPct < 0) return false;
+        if (allPerformance === 'losers' && dayPct > 0) return false;
+      }
+
+      return true;
+    });
+
+    // Sorting
+    list = [...list].sort((a, b) => {
+      const priceA = quotes[a.symbol]?.currentPrice ?? a.currentPrice;
+      const priceB = quotes[b.symbol]?.currentPrice ?? b.currentPrice;
+      const dayChgA = quotes[a.symbol]?.dayChangePercent ?? a.dayChangePercent;
+      const dayChgB = quotes[b.symbol]?.dayChangePercent ?? b.dayChangePercent;
+
+      if (activeAssetType === 'all') {
+        if (allSortBy === 'dayChangeDesc') return dayChgB - dayChgA;
+        if (allSortBy === 'dayChangeAsc') return dayChgA - dayChgB;
+        if (allSortBy === 'priceDesc') return priceB - priceA;
+        if (allSortBy === 'priceAsc') return priceA - priceB;
+        return 0;
+      }
+
+      switch (stockSortBy) {
+        case 'marketCapDesc':
+          return b.marketCap - a.marketCap;
+        case 'priceDesc':
+          return priceB - priceA;
+        case 'priceAsc':
+          return priceA - priceB;
+        case 'dayChangeDesc':
+          return dayChgB - dayChgA;
+        case 'dayChangeAsc':
+          return dayChgA - dayChgB;
+        case 'peAsc':
+          return a.peRatio - b.peRatio;
+        case 'roeDesc':
+          return b.roe - a.roe;
+        case 'betaAsc':
+          return a.beta - b.beta;
+        default:
+          return 0;
+      }
+    });
+
+    return list;
+  }, [query, stockCap, stockSector, stockPE, stockROE, stockDebt, stockSortBy, activeAssetType, allPerformance, allSortBy, quotes]);
+
+  const filteredMFs = useMemo(() => {
+    let list = DEMO_MUTUAL_FUNDS.filter(mf => {
+      // Global Search
+      if (query && !(
+        mf.name.toLowerCase().includes(query) ||
+        mf.code.toLowerCase().includes(query) ||
+        mf.category.toLowerCase().includes(query) ||
+        mf.benchmark.toLowerCase().includes(query) ||
+        mf.fundManager.toLowerCase().includes(query) ||
+        mf.topHoldings.some(th => th.name.toLowerCase().includes(query))
+      )) {
+        return false;
+      }
+
+      // Mutual Fund filters
+      if (mfCategory !== 'all' && mf.category !== mfCategory) return false;
+
+      if (mfTER === 'ultra_low' && mf.expenseRatio >= 0.3) return false;
+      if (mfTER === 'low' && mf.expenseRatio >= 0.7) return false;
+      if (mfTER === 'standard' && mf.expenseRatio < 0.7) return false;
+
+      if (mfReturnHorizon === '1y_35' && mf.cagr1Y < 35) return false;
+      if (mfReturnHorizon === '3y_20' && mf.cagr3Y < 20) return false;
+      if (mfReturnHorizon === '5y_20' && mf.cagr5Y < 20) return false;
+      if (mfReturnHorizon === '5y_25' && mf.cagr5Y < 25) return false;
+
+      if (mfSharpe === 'above1.2' && mf.sharpeRatio < 1.2) return false;
+      if (mfSharpe === 'above1.5' && mf.sharpeRatio < 1.5) return false;
+
+      if (activeAssetType === 'all') {
+        const live = quotes[mf.code];
+        const dayPct = live ? live.dayChangePercent : mf.dayChangePercent;
+        if (allPerformance === 'gainers' && dayPct < 0) return false;
+        if (allPerformance === 'losers' && dayPct > 0) return false;
+      }
+
+      return true;
+    });
+
+    list = [...list].sort((a, b) => {
+      const navA = quotes[a.code]?.currentPrice ?? a.nav;
+      const navB = quotes[b.code]?.currentPrice ?? b.nav;
+      const dayChgA = quotes[a.code]?.dayChangePercent ?? a.dayChangePercent;
+      const dayChgB = quotes[b.code]?.dayChangePercent ?? b.dayChangePercent;
+
+      if (activeAssetType === 'all') {
+        if (allSortBy === 'dayChangeDesc') return dayChgB - dayChgA;
+        if (allSortBy === 'dayChangeAsc') return dayChgA - dayChgB;
+        if (allSortBy === 'priceDesc') return navB - navA;
+        if (allSortBy === 'priceAsc') return navA - navB;
+        return 0;
+      }
+
+      switch (mfSortBy) {
+        case 'aumDesc':
+          return b.aumCrores - a.aumCrores;
+        case 'cagr5yDesc':
+          return b.cagr5Y - a.cagr5Y;
+        case 'cagr3yDesc':
+          return b.cagr3Y - a.cagr3Y;
+        case 'cagr1yDesc':
+          return b.cagr1Y - a.cagr1Y;
+        case 'terAsc':
+          return a.expenseRatio - b.expenseRatio;
+        case 'navDesc':
+          return navB - navA;
+        default:
+          return 0;
+      }
+    });
+
+    return list;
+  }, [query, mfCategory, mfTER, mfReturnHorizon, mfSharpe, mfSortBy, activeAssetType, allPerformance, allSortBy, quotes]);
+
+  const filteredETFs = useMemo(() => {
+    let list = DEMO_ETFS.filter(etf => {
+      if (query && !(
+        etf.symbol.toLowerCase().includes(query) ||
+        etf.name.toLowerCase().includes(query) ||
+        etf.underlyingAsset.toLowerCase().includes(query) ||
+        etf.isin.toLowerCase().includes(query) ||
+        etf.category.toLowerCase().includes(query)
+      )) {
+        return false;
+      }
+
+      if (etfCategory !== 'all' && etf.category !== etfCategory) return false;
+
+      if (etfPricing === 'discount' && etf.premiumDiscountPercent >= 0) return false;
+      if (etfPricing === 'fair_premium' && etf.premiumDiscountPercent < 0) return false;
+
+      if (etfExpense === 'under0.2' && etf.expenseRatio >= 0.2) return false;
+      if (etfExpense === 'under0.5' && etf.expenseRatio >= 0.5) return false;
+
+      if (activeAssetType === 'all') {
+        const live = quotes[etf.symbol];
+        const dayPct = live ? live.dayChangePercent : etf.dayChangePercent;
+        if (allPerformance === 'gainers' && dayPct < 0) return false;
+        if (allPerformance === 'losers' && dayPct > 0) return false;
+      }
+
+      return true;
+    });
+
+    list = [...list].sort((a, b) => {
+      const priceA = quotes[a.symbol]?.currentPrice ?? a.currentPrice;
+      const priceB = quotes[b.symbol]?.currentPrice ?? b.currentPrice;
+      const dayChgA = quotes[a.symbol]?.dayChangePercent ?? a.dayChangePercent;
+      const dayChgB = quotes[b.symbol]?.dayChangePercent ?? b.dayChangePercent;
+
+      if (activeAssetType === 'all') {
+        if (allSortBy === 'dayChangeDesc') return dayChgB - dayChgA;
+        if (allSortBy === 'dayChangeAsc') return dayChgA - dayChgB;
+        if (allSortBy === 'priceDesc') return priceB - priceA;
+        if (allSortBy === 'priceAsc') return priceA - priceB;
+        return 0;
+      }
+
+      switch (etfSortBy) {
+        case 'aumDesc':
+          return b.aumCrores - a.aumCrores;
+        case 'dayChangeDesc':
+          return dayChgB - dayChgA;
+        case 'terAsc':
+          return a.expenseRatio - b.expenseRatio;
+        case 'priceDesc':
+          return priceB - priceA;
+        default:
+          return 0;
+      }
+    });
+
+    return list;
+  }, [query, etfCategory, etfPricing, etfExpense, etfSortBy, activeAssetType, allPerformance, allSortBy, quotes]);
+
+  const filteredBonds = useMemo(() => {
+    let list = DEMO_BONDS.filter(b => {
+      if (query && !(
+        b.name.toLowerCase().includes(query) ||
+        b.isin.toLowerCase().includes(query) ||
+        b.issuerType.toLowerCase().includes(query) ||
+        b.creditRating.toLowerCase().includes(query) ||
+        b.couponRate.toString().includes(query) ||
+        b.maturityDate.toLowerCase().includes(query)
+      )) {
+        return false;
+      }
+
+      if (bondIssuer !== 'all' && b.issuerType !== bondIssuer) return false;
+      if (bondRating !== 'all' && b.creditRating !== bondRating) return false;
+      if (bondPayout !== 'all' && b.paymentFrequency !== bondPayout) return false;
+
+      if (bondYTM === 'above7.0' && b.ytm < 7.0) return false;
+      if (bondYTM === 'above7.5' && b.ytm < 7.5) return false;
+      if (bondYTM === 'above8.0' && b.ytm < 8.0) return false;
+
+      return true;
+    });
+
+    list = [...list].sort((a, b) => {
+      if (activeAssetType === 'all') {
+        if (allSortBy === 'priceDesc') return b.marketPrice - a.marketPrice;
+        if (allSortBy === 'priceAsc') return a.marketPrice - b.marketPrice;
+        return 0;
+      }
+
+      switch (bondSortBy) {
+        case 'ytmDesc':
+          return b.ytm - a.ytm;
+        case 'couponDesc':
+          return b.couponRate - a.couponRate;
+        case 'priceAsc':
+          return a.marketPrice - b.marketPrice;
+        case 'priceDesc':
+          return b.marketPrice - a.marketPrice;
+        default:
+          return 0;
+      }
+    });
+
+    return list;
+  }, [query, bondIssuer, bondRating, bondPayout, bondYTM, bondSortBy, activeAssetType, allSortBy]);
+
+  const totalMatches =
+    (allClasses.stocks ? filteredStocks.length : 0) +
+    (allClasses.mfs ? filteredMFs.length : 0) +
+    (allClasses.etfs ? filteredETFs.length : 0) +
+    (allClasses.bonds ? filteredBonds.length : 0);
 
   // Render Table Components
   const renderStocksTable = (stocks: StockDetail[], isEmbedded = false) => (
@@ -671,6 +1026,757 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ onSelectHolding, onUpd
     </div>
   );
 
+  // Toolbar Renderer: Tab 1 (All Instruments)
+  const renderAllFilterToolbar = () => (
+    <div className="explorer-filter-toolbar animate-fade-in">
+      <div className="filter-controls-row">
+        <div className="filter-select-group">
+          <label>Display Asset Classes</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setAllClasses(p => ({ ...p, stocks: !p.stocks }))}
+              className={`filter-toggle-pill ${allClasses.stocks ? 'active' : ''}`}
+              title="Toggle Equities"
+            >
+              <TrendingUp size={12} /> Equities ({filteredStocks.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAllClasses(p => ({ ...p, mfs: !p.mfs }))}
+              className={`filter-toggle-pill ${allClasses.mfs ? 'active' : ''}`}
+              title="Toggle Mutual Funds"
+            >
+              <PieChart size={12} /> Mutual Funds ({filteredMFs.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAllClasses(p => ({ ...p, etfs: !p.etfs }))}
+              className={`filter-toggle-pill ${allClasses.etfs ? 'active' : ''}`}
+              title="Toggle ETFs"
+            >
+              <Layers size={12} /> ETFs ({filteredETFs.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAllClasses(p => ({ ...p, bonds: !p.bonds }))}
+              className={`filter-toggle-pill ${allClasses.bonds ? 'active' : ''}`}
+              title="Toggle Fixed Income"
+            >
+              <Landmark size={12} /> Fixed Income ({filteredBonds.length})
+            </button>
+          </div>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Day Performance</label>
+          <select
+            value={allPerformance}
+            onChange={e => setAllPerformance(e.target.value as any)}
+            className="filter-select"
+          >
+            <option value="all">All Day Moves</option>
+            <option value="gainers">Gainers Only (▲)</option>
+            <option value="losers">Losers Only (▼)</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Sort Catalog</label>
+          <select
+            value={allSortBy}
+            onChange={e => setAllSortBy(e.target.value as any)}
+            className="filter-select"
+          >
+            <option value="default">Default Order</option>
+            <option value="dayChangeDesc">Day Gainers (Highest %)</option>
+            <option value="dayChangeAsc">Day Losers (Lowest %)</option>
+            <option value="priceDesc">Price / NAV (High to Low)</option>
+            <option value="priceAsc">Price / NAV (Low to High)</option>
+          </select>
+        </div>
+
+        {allActiveFilterCount > 0 && (
+          <button onClick={resetAllFilters} className="filter-reset-btn" title="Reset all filters">
+            <RotateCcw size={12} /> Reset ({allActiveFilterCount})
+          </button>
+        )}
+      </div>
+
+      <div className="filter-presets-row">
+        <span className="filter-preset-label">
+          <Sparkles size={11} style={{ color: 'var(--accent-primary)' }} /> Quick Presets:
+        </span>
+        <button
+          onClick={() => resetAllFilters()}
+          className={`preset-chip ${allActiveFilterCount === 0 ? 'active' : ''}`}
+        >
+          All Assets
+        </button>
+        <button
+          onClick={() => {
+            setAllClasses({ stocks: true, mfs: true, etfs: false, bonds: false });
+            setAllPerformance('all');
+            setAllSortBy('default');
+          }}
+          className={`preset-chip ${allClasses.stocks && allClasses.mfs && !allClasses.etfs && !allClasses.bonds ? 'active' : ''}`}
+        >
+          Equities &amp; Mutual Funds
+        </button>
+        <button
+          onClick={() => {
+            setAllClasses({ stocks: true, mfs: true, etfs: true, bonds: true });
+            setAllPerformance('gainers');
+            setAllSortBy('dayChangeDesc');
+          }}
+          className={`preset-chip ${allPerformance === 'gainers' && allSortBy === 'dayChangeDesc' ? 'active' : ''}`}
+        >
+          📈 Top Day Gainers
+        </button>
+        <button
+          onClick={() => {
+            setAllClasses({ stocks: false, mfs: false, etfs: true, bonds: true });
+            setAllPerformance('all');
+            setAllSortBy('default');
+          }}
+          className={`preset-chip ${!allClasses.stocks && !allClasses.mfs && allClasses.etfs && allClasses.bonds ? 'active' : ''}`}
+        >
+          🏛️ Debt &amp; Commodities
+        </button>
+      </div>
+    </div>
+  );
+
+  // Toolbar Renderer: Tab 2 (Equities)
+  const renderStocksFilterToolbar = () => (
+    <div className="explorer-filter-toolbar animate-fade-in">
+      <div className="filter-controls-row">
+        <div className="filter-select-group">
+          <label>Market Cap</label>
+          <select
+            value={stockCap}
+            onChange={e => {
+              setStockCap(e.target.value as any);
+              setStockActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Market Caps</option>
+            <option value="Large Cap">Large Cap</option>
+            <option value="Mid Cap">Mid Cap</option>
+            <option value="Small Cap">Small Cap</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Industry Sector</label>
+          <select
+            value={stockSector}
+            onChange={e => {
+              setStockSector(e.target.value);
+              setStockActivePreset(null);
+            }}
+            className="filter-select"
+            style={{ maxWidth: 200 }}
+          >
+            <option value="all">All Sectors ({uniqueStockSectors.length})</option>
+            {uniqueStockSectors.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>P/E Valuation</label>
+          <select
+            value={stockPE}
+            onChange={e => {
+              setStockPE(e.target.value as any);
+              setStockActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All P/E Ratios</option>
+            <option value="under25">Value (&lt; 25x)</option>
+            <option value="25to45">Moderate (25x - 45x)</option>
+            <option value="over45">Growth (&gt; 45x)</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Return on Equity</label>
+          <select
+            value={stockROE}
+            onChange={e => {
+              setStockROE(e.target.value as any);
+              setStockActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All ROE</option>
+            <option value="above15">High ROE (&ge; 15%)</option>
+            <option value="above25">Superior ROE (&ge; 25%)</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Debt to Equity</label>
+          <select
+            value={stockDebt}
+            onChange={e => {
+              setStockDebt(e.target.value as any);
+              setStockActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Leverage</option>
+            <option value="low">Low Debt (D/E &lt; 0.5)</option>
+            <option value="zero">Zero Debt (D/E = 0)</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Sort By</label>
+          <select
+            value={stockSortBy}
+            onChange={e => {
+              setStockSortBy(e.target.value as any);
+              setStockActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="marketCapDesc">Market Cap (High &rarr; Low)</option>
+            <option value="dayChangeDesc">Day Change (Top Gainers)</option>
+            <option value="dayChangeAsc">Day Change (Top Losers)</option>
+            <option value="priceDesc">LTP (High &rarr; Low)</option>
+            <option value="priceAsc">LTP (Low &rarr; High)</option>
+            <option value="peAsc">P/E Multiple (Lowest First)</option>
+            <option value="roeDesc">ROE % (Highest First)</option>
+            <option value="betaAsc">Beta (Lowest Volatility)</option>
+          </select>
+        </div>
+
+        {stockActiveFilterCount > 0 && (
+          <button onClick={resetStockFilters} className="filter-reset-btn" title="Reset all equity filters">
+            <RotateCcw size={12} /> Reset ({stockActiveFilterCount})
+          </button>
+        )}
+      </div>
+
+      <div className="filter-presets-row">
+        <span className="filter-preset-label">
+          <Sparkles size={11} style={{ color: 'var(--accent-primary)' }} /> Quick Presets:
+        </span>
+        <button
+          onClick={resetStockFilters}
+          className={`preset-chip ${stockActiveFilterCount === 0 ? 'active' : ''}`}
+        >
+          All Equities
+        </button>
+        <button
+          onClick={() => {
+            resetStockFilters();
+            setStockCap('Large Cap');
+            setStockSortBy('marketCapDesc');
+            setStockActivePreset('large_titans');
+          }}
+          className={`preset-chip ${stockActivePreset === 'large_titans' ? 'active' : ''}`}
+        >
+          ⚡ Large Cap Titans
+        </button>
+        <button
+          onClick={() => {
+            resetStockFilters();
+            setStockROE('above25');
+            setStockSortBy('roeDesc');
+            setStockActivePreset('high_roe');
+          }}
+          className={`preset-chip ${stockActivePreset === 'high_roe' ? 'active' : ''}`}
+        >
+          💎 High ROE (&gt;25%)
+        </button>
+        <button
+          onClick={() => {
+            resetStockFilters();
+            setStockDebt('zero');
+            setStockActivePreset('debt_free');
+          }}
+          className={`preset-chip ${stockActivePreset === 'debt_free' ? 'active' : ''}`}
+        >
+          🛡️ Debt-Free Balance Sheets
+        </button>
+        <button
+          onClick={() => {
+            resetStockFilters();
+            setStockSortBy('dayChangeDesc');
+            setStockActivePreset('gainers');
+          }}
+          className={`preset-chip ${stockActivePreset === 'gainers' ? 'active' : ''}`}
+        >
+          📈 Top Gainers Today
+        </button>
+        <button
+          onClick={() => {
+            resetStockFilters();
+            setStockPE('under25');
+            setStockSortBy('peAsc');
+            setStockActivePreset('deep_value');
+          }}
+          className={`preset-chip ${stockActivePreset === 'deep_value' ? 'active' : ''}`}
+        >
+          🎯 Deep Value (P/E &lt; 25)
+        </button>
+      </div>
+    </div>
+  );
+
+  // Toolbar Renderer: Tab 3 (Mutual Funds)
+  const renderMFsFilterToolbar = () => (
+    <div className="explorer-filter-toolbar animate-fade-in">
+      <div className="filter-controls-row">
+        <div className="filter-select-group">
+          <label>Fund Category</label>
+          <select
+            value={mfCategory}
+            onChange={e => {
+              setMfCategory(e.target.value);
+              setMfActivePreset(null);
+            }}
+            className="filter-select"
+            style={{ maxWidth: 200 }}
+          >
+            <option value="all">All Categories ({uniqueMFCategories.length})</option>
+            {uniqueMFCategories.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Expense Ratio (TER)</label>
+          <select
+            value={mfTER}
+            onChange={e => {
+              setMfTER(e.target.value as any);
+              setMfActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Expense Ratios</option>
+            <option value="ultra_low">Ultra Low (&lt; 0.3%)</option>
+            <option value="low">Low TER (&lt; 0.7%)</option>
+            <option value="standard">Standard (&ge; 0.7%)</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Performance Benchmark</label>
+          <select
+            value={mfReturnHorizon}
+            onChange={e => {
+              setMfReturnHorizon(e.target.value as any);
+              setMfActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Returns</option>
+            <option value="1y_35">1Y Return &ge; 35%</option>
+            <option value="3y_20">3Y CAGR &ge; 20%</option>
+            <option value="5y_20">5Y CAGR &ge; 20%</option>
+            <option value="5y_25">5Y CAGR &ge; 25%</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Risk-Adjusted (Sharpe)</label>
+          <select
+            value={mfSharpe}
+            onChange={e => {
+              setMfSharpe(e.target.value as any);
+              setMfActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Risk Profiles</option>
+            <option value="above1.2">Moderate Sharpe (&ge; 1.2)</option>
+            <option value="above1.5">High Alpha Sharpe (&ge; 1.5)</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Sort By</label>
+          <select
+            value={mfSortBy}
+            onChange={e => {
+              setMfSortBy(e.target.value as any);
+              setMfActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="aumDesc">AUM Crores (High &rarr; Low)</option>
+            <option value="cagr5yDesc">5Y CAGR (Highest First)</option>
+            <option value="cagr3yDesc">3Y CAGR (Highest First)</option>
+            <option value="cagr1yDesc">1Y Return (Highest First)</option>
+            <option value="terAsc">TER Expense (Lowest First)</option>
+            <option value="navDesc">NAV (High &rarr; Low)</option>
+          </select>
+        </div>
+
+        {mfActiveFilterCount > 0 && (
+          <button onClick={resetMFFilters} className="filter-reset-btn" title="Reset all mutual fund filters">
+            <RotateCcw size={12} /> Reset ({mfActiveFilterCount})
+          </button>
+        )}
+      </div>
+
+      <div className="filter-presets-row">
+        <span className="filter-preset-label">
+          <Sparkles size={11} style={{ color: 'var(--accent-primary)' }} /> Quick Presets:
+        </span>
+        <button
+          onClick={resetMFFilters}
+          className={`preset-chip ${mfActiveFilterCount === 0 ? 'active' : ''}`}
+        >
+          All Funds
+        </button>
+        <button
+          onClick={() => {
+            resetMFFilters();
+            setMfReturnHorizon('5y_20');
+            setMfSortBy('cagr5yDesc');
+            setMfActivePreset('top5y');
+          }}
+          className={`preset-chip ${mfActivePreset === 'top5y' ? 'active' : ''}`}
+        >
+          🏆 Top 5Y Wealth Creators (&gt;20% CAGR)
+        </button>
+        <button
+          onClick={() => {
+            resetMFFilters();
+            setMfTER('ultra_low');
+            setMfSortBy('terAsc');
+            setMfActivePreset('low_ter');
+          }}
+          className={`preset-chip ${mfActivePreset === 'low_ter' ? 'active' : ''}`}
+        >
+          💰 Low TER Index Funds (&lt;0.3%)
+        </button>
+        <button
+          onClick={() => {
+            resetMFFilters();
+            setMfCategory('Flexi Cap Fund');
+            setMfSortBy('cagr3yDesc');
+            setMfActivePreset('alpha');
+          }}
+          className={`preset-chip ${mfActivePreset === 'alpha' ? 'active' : ''}`}
+        >
+          🚀 Flexi Cap Alpha
+        </button>
+        <button
+          onClick={() => {
+            resetMFFilters();
+            setMfSharpe('above1.5');
+            setMfSortBy('aumDesc');
+            setMfActivePreset('high_sharpe');
+          }}
+          className={`preset-chip ${mfActivePreset === 'high_sharpe' ? 'active' : ''}`}
+        >
+          🛡️ High Sharpe (&gt;1.5)
+        </button>
+      </div>
+    </div>
+  );
+
+  // Toolbar Renderer: Tab 4 (ETFs)
+  const renderETFsFilterToolbar = () => (
+    <div className="explorer-filter-toolbar animate-fade-in">
+      <div className="filter-controls-row">
+        <div className="filter-select-group">
+          <label>ETF Category</label>
+          <select
+            value={etfCategory}
+            onChange={e => {
+              setEtfCategory(e.target.value);
+              setEtfActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All ETF Categories</option>
+            <option value="Index">Index ETFs</option>
+            <option value="Commodity">Commodity (Gold &amp; Silver)</option>
+            <option value="Sectoral">Sectoral (Bank &amp; IT)</option>
+            <option value="Debt">Debt &amp; Liquid Cash</option>
+            <option value="Global">Global Tech</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>NAV Pricing</label>
+          <select
+            value={etfPricing}
+            onChange={e => {
+              setEtfPricing(e.target.value as any);
+              setEtfActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Pricing</option>
+            <option value="discount">Trading at Discount (&lt; 0%)</option>
+            <option value="fair_premium">Fair / Par (&ge; 0%)</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Expense Ratio</label>
+          <select
+            value={etfExpense}
+            onChange={e => {
+              setEtfExpense(e.target.value as any);
+              setEtfActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Expense Ratios</option>
+            <option value="under0.2">Ultra Low (&lt; 0.2%)</option>
+            <option value="under0.5">Low (&lt; 0.5%)</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Sort By</label>
+          <select
+            value={etfSortBy}
+            onChange={e => {
+              setEtfSortBy(e.target.value as any);
+              setEtfActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="aumDesc">AUM Crores (High &rarr; Low)</option>
+            <option value="dayChangeDesc">Day Change (Top Gainers)</option>
+            <option value="terAsc">Expense Ratio (Lowest First)</option>
+            <option value="priceDesc">LTP (High &rarr; Low)</option>
+          </select>
+        </div>
+
+        {etfActiveFilterCount > 0 && (
+          <button onClick={resetETFFilters} className="filter-reset-btn" title="Reset all ETF filters">
+            <RotateCcw size={12} /> Reset ({etfActiveFilterCount})
+          </button>
+        )}
+      </div>
+
+      <div className="filter-presets-row">
+        <span className="filter-preset-label">
+          <Sparkles size={11} style={{ color: 'var(--accent-primary)' }} /> Quick Presets:
+        </span>
+        <button
+          onClick={resetETFFilters}
+          className={`preset-chip ${etfActiveFilterCount === 0 ? 'active' : ''}`}
+        >
+          All ETFs
+        </button>
+        <button
+          onClick={() => {
+            resetETFFilters();
+            setEtfCategory('Commodity');
+            setEtfSortBy('aumDesc');
+            setEtfActivePreset('metals');
+          }}
+          className={`preset-chip ${etfActivePreset === 'metals' ? 'active' : ''}`}
+        >
+          🥇 Gold &amp; Silver Commodities
+        </button>
+        <button
+          onClick={() => {
+            resetETFFilters();
+            setEtfCategory('Index');
+            setEtfSortBy('aumDesc');
+            setEtfActivePreset('broad_index');
+          }}
+          className={`preset-chip ${etfActivePreset === 'broad_index' ? 'active' : ''}`}
+        >
+          📊 Core Index BeES
+        </button>
+        <button
+          onClick={() => {
+            resetETFFilters();
+            setEtfCategory('Global');
+            setEtfSortBy('aumDesc');
+            setEtfActivePreset('global_tech');
+          }}
+          className={`preset-chip ${etfActivePreset === 'global_tech' ? 'active' : ''}`}
+        >
+          🌐 Global Tech (Nasdaq 100)
+        </button>
+        <button
+          onClick={() => {
+            resetETFFilters();
+            setEtfCategory('Debt');
+            setEtfSortBy('aumDesc');
+            setEtfActivePreset('liquid');
+          }}
+          className={`preset-chip ${etfActivePreset === 'liquid' ? 'active' : ''}`}
+        >
+          💧 Liquid Cash (Overnight Yield)
+        </button>
+      </div>
+    </div>
+  );
+
+  // Toolbar Renderer: Tab 5 (Fixed Income & Bonds)
+  const renderBondsFilterToolbar = () => (
+    <div className="explorer-filter-toolbar animate-fade-in">
+      <div className="filter-controls-row">
+        <div className="filter-select-group">
+          <label>Issuer Type</label>
+          <select
+            value={bondIssuer}
+            onChange={e => {
+              setBondIssuer(e.target.value);
+              setBondActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Issuer Types</option>
+            {uniqueBondIssuers.map(i => (
+              <option key={i} value={i}>{i}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Credit Rating</label>
+          <select
+            value={bondRating}
+            onChange={e => {
+              setBondRating(e.target.value);
+              setBondActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Ratings</option>
+            {uniqueBondRatings.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Coupon Frequency</label>
+          <select
+            value={bondPayout}
+            onChange={e => {
+              setBondPayout(e.target.value);
+              setBondActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Frequencies</option>
+            <option value="Annual">Annual</option>
+            <option value="Semi-Annual">Semi-Annual</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Yield to Maturity (YTM)</label>
+          <select
+            value={bondYTM}
+            onChange={e => {
+              setBondYTM(e.target.value as any);
+              setBondActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Yields</option>
+            <option value="above7.0">YTM &ge; 7.0%</option>
+            <option value="above7.5">YTM &ge; 7.5%</option>
+            <option value="above8.0">High Yield (&ge; 8.0%)</option>
+          </select>
+        </div>
+
+        <div className="filter-select-group">
+          <label>Sort By</label>
+          <select
+            value={bondSortBy}
+            onChange={e => {
+              setBondSortBy(e.target.value as any);
+              setBondActivePreset(null);
+            }}
+            className="filter-select"
+          >
+            <option value="ytmDesc">YTM Yield (Highest First)</option>
+            <option value="couponDesc">Coupon Rate (Highest First)</option>
+            <option value="priceAsc">Market Price (Lowest First)</option>
+            <option value="priceDesc">Market Price (Highest First)</option>
+          </select>
+        </div>
+
+        {bondActiveFilterCount > 0 && (
+          <button onClick={resetBondFilters} className="filter-reset-btn" title="Reset all debt filters">
+            <RotateCcw size={12} /> Reset ({bondActiveFilterCount})
+          </button>
+        )}
+      </div>
+
+      <div className="filter-presets-row">
+        <span className="filter-preset-label">
+          <Sparkles size={11} style={{ color: 'var(--accent-primary)' }} /> Quick Presets:
+        </span>
+        <button
+          onClick={resetBondFilters}
+          className={`preset-chip ${bondActiveFilterCount === 0 ? 'active' : ''}`}
+        >
+          All Debt
+        </button>
+        <button
+          onClick={() => {
+            resetBondFilters();
+            setBondIssuer('Sovereign');
+            setBondSortBy('ytmDesc');
+            setBondActivePreset('sovereign_sgb');
+          }}
+          className={`preset-chip ${bondActivePreset === 'sovereign_sgb' ? 'active' : ''}`}
+        >
+          🏛️ Sovereign &amp; SGB (Govt. Backed)
+        </button>
+        <button
+          onClick={() => {
+            resetBondFilters();
+            setBondRating('CRISIL AAA');
+            setBondSortBy('ytmDesc');
+            setBondActivePreset('aaa_corp');
+          }}
+          className={`preset-chip ${bondActivePreset === 'aaa_corp' ? 'active' : ''}`}
+        >
+          🏢 CRISIL AAA Rated Corporate PSUs
+        </button>
+        <button
+          onClick={() => {
+            resetBondFilters();
+            setBondYTM('above7.5');
+            setBondSortBy('ytmDesc');
+            setBondActivePreset('high_yield');
+          }}
+          className={`preset-chip ${bondActivePreset === 'high_yield' ? 'active' : ''}`}
+        >
+          📈 Highest YTM (&gt;7.5%)
+        </button>
+        <button
+          onClick={() => {
+            resetBondFilters();
+            setBondPayout('Semi-Annual');
+            setBondSortBy('ytmDesc');
+            setBondActivePreset('semi_annual');
+          }}
+          className={`preset-chip ${bondActivePreset === 'semi_annual' ? 'active' : ''}`}
+        >
+          📅 Regular Semi-Annual Income
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       {/* Header & Global Search Bar */}
@@ -678,7 +1784,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ onSelectHolding, onUpd
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700' }}>Asset Explorer</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-            Live Exchange Quotes (NSE / BSE), Official AMFI Daily NAVs & Factual Disclosures
+            Live Exchange Quotes (NSE / BSE), Official AMFI Daily NAVs &amp; Factual Disclosures
           </p>
         </div>
 
@@ -733,34 +1839,51 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ onSelectHolding, onUpd
         <button
           onClick={() => setActiveAssetType('all')}
           className={`tab-btn ${activeAssetType === 'all' ? 'active' : ''}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
-          All Instruments ({totalMatches})
+          <span>All Instruments ({totalMatches})</span>
+          {allActiveFilterCount > 0 && <span className="filter-active-count">{allActiveFilterCount}</span>}
         </button>
         <button
           onClick={() => setActiveAssetType('stocks')}
           className={`tab-btn ${activeAssetType === 'stocks' ? 'active' : ''}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
-          Equities ({filteredStocks.length})
+          <span>Equities ({filteredStocks.length})</span>
+          {stockActiveFilterCount > 0 && <span className="filter-active-count">{stockActiveFilterCount}</span>}
         </button>
         <button
           onClick={() => setActiveAssetType('mfs')}
           className={`tab-btn ${activeAssetType === 'mfs' ? 'active' : ''}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
-          Mutual Funds ({filteredMFs.length})
+          <span>Mutual Funds ({filteredMFs.length})</span>
+          {mfActiveFilterCount > 0 && <span className="filter-active-count">{mfActiveFilterCount}</span>}
         </button>
         <button
           onClick={() => setActiveAssetType('etfs')}
           className={`tab-btn ${activeAssetType === 'etfs' ? 'active' : ''}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
-          ETFs ({filteredETFs.length})
+          <span>ETFs ({filteredETFs.length})</span>
+          {etfActiveFilterCount > 0 && <span className="filter-active-count">{etfActiveFilterCount}</span>}
         </button>
         <button
           onClick={() => setActiveAssetType('bonds')}
           className={`tab-btn ${activeAssetType === 'bonds' ? 'active' : ''}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
-          Fixed Income & Sovereign Debt ({filteredBonds.length})
+          <span>Fixed Income &amp; Sovereign Debt ({filteredBonds.length})</span>
+          {bondActiveFilterCount > 0 && <span className="filter-active-count">{bondActiveFilterCount}</span>}
         </button>
       </div>
+
+      {/* Dynamic Tab-Specific Filter Toolbar */}
+      {activeAssetType === 'all' && renderAllFilterToolbar()}
+      {activeAssetType === 'stocks' && renderStocksFilterToolbar()}
+      {activeAssetType === 'mfs' && renderMFsFilterToolbar()}
+      {activeAssetType === 'etfs' && renderETFsFilterToolbar()}
+      {activeAssetType === 'bonds' && renderBondsFilterToolbar()}
 
       {/* LIVE MARKET REGISTRY SEARCH RESULTS SECTION (NSE / BSE / AMFI) */}
       {query.length >= 2 && (
@@ -894,24 +2017,84 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ onSelectHolding, onUpd
       {/* View: All Instruments Consolidated Search */}
       {activeAssetType === 'all' && totalMatches > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {filteredStocks.length > 0 && renderStocksTable(filteredStocks, true)}
-          {filteredMFs.length > 0 && renderMFsTable(filteredMFs, true)}
-          {filteredETFs.length > 0 && renderETFsTable(filteredETFs, true)}
-          {filteredBonds.length > 0 && renderBondsTable(filteredBonds, true)}
+          {allClasses.stocks && filteredStocks.length > 0 && renderStocksTable(filteredStocks, true)}
+          {allClasses.mfs && filteredMFs.length > 0 && renderMFsTable(filteredMFs, true)}
+          {allClasses.etfs && filteredETFs.length > 0 && renderETFsTable(filteredETFs, true)}
+          {allClasses.bonds && filteredBonds.length > 0 && renderBondsTable(filteredBonds, true)}
         </div>
       )}
 
       {/* View: Equities Only */}
-      {activeAssetType === 'stocks' && filteredStocks.length > 0 && renderStocksTable(filteredStocks, false)}
+      {activeAssetType === 'stocks' && (
+        filteredStocks.length > 0 ? (
+          renderStocksTable(filteredStocks, false)
+        ) : (
+          <div className="terminal-card" style={{ padding: 40, textAlign: 'center' }}>
+            <Filter size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 12px auto' }} />
+            <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: 6 }}>No Equities Match Filter Criteria</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: 460, margin: '0 auto 16px auto' }}>
+              No companies matched your active sector, market cap, or valuation filters. Try clearing some criteria to expand your results.
+            </p>
+            <button onClick={resetStockFilters} className="btn btn-secondary btn-sm" style={{ gap: 6 }}>
+              <RotateCcw size={12} /> Clear Equities Filters
+            </button>
+          </div>
+        )
+      )}
 
       {/* View: Mutual Funds Only */}
-      {activeAssetType === 'mfs' && filteredMFs.length > 0 && renderMFsTable(filteredMFs, false)}
+      {activeAssetType === 'mfs' && (
+        filteredMFs.length > 0 ? (
+          renderMFsTable(filteredMFs, false)
+        ) : (
+          <div className="terminal-card" style={{ padding: 40, textAlign: 'center' }}>
+            <Filter size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 12px auto' }} />
+            <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: 6 }}>No Mutual Funds Match Criteria</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: 460, margin: '0 auto 16px auto' }}>
+              No mutual funds matched your active category, TER, or return horizon filters. Try resetting filters to view all funds.
+            </p>
+            <button onClick={resetMFFilters} className="btn btn-secondary btn-sm" style={{ gap: 6 }}>
+              <RotateCcw size={12} /> Clear Mutual Fund Filters
+            </button>
+          </div>
+        )
+      )}
 
       {/* View: ETFs Only */}
-      {activeAssetType === 'etfs' && filteredETFs.length > 0 && renderETFsTable(filteredETFs, false)}
+      {activeAssetType === 'etfs' && (
+        filteredETFs.length > 0 ? (
+          renderETFsTable(filteredETFs, false)
+        ) : (
+          <div className="terminal-card" style={{ padding: 40, textAlign: 'center' }}>
+            <Filter size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 12px auto' }} />
+            <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: 6 }}>No ETFs Match Criteria</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: 460, margin: '0 auto 16px auto' }}>
+              No exchange traded funds matched your active category or valuation filters. Try resetting filters to view all ETFs.
+            </p>
+            <button onClick={resetETFFilters} className="btn btn-secondary btn-sm" style={{ gap: 6 }}>
+              <RotateCcw size={12} /> Clear ETF Filters
+            </button>
+          </div>
+        )
+      )}
 
       {/* View: Bonds Only */}
-      {activeAssetType === 'bonds' && filteredBonds.length > 0 && renderBondsTable(filteredBonds, false)}
+      {activeAssetType === 'bonds' && (
+        filteredBonds.length > 0 ? (
+          renderBondsTable(filteredBonds, false)
+        ) : (
+          <div className="terminal-card" style={{ padding: 40, textAlign: 'center' }}>
+            <Filter size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 12px auto' }} />
+            <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: 6 }}>No Debt Instruments Match Criteria</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: 460, margin: '0 auto 16px auto' }}>
+              No fixed income or sovereign debt securities matched your active rating or yield filters. Try resetting filters to view all debt instruments.
+            </p>
+            <button onClick={resetBondFilters} className="btn btn-secondary btn-sm" style={{ gap: 6 }}>
+              <RotateCcw size={12} /> Clear Debt Filters
+            </button>
+          </div>
+        )
+      )}
 
       {/* Compliance Disclaimer */}
       <div className="compliance-notice">
@@ -923,3 +2106,4 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ onSelectHolding, onUpd
     </div>
   );
 };
+

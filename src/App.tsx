@@ -13,7 +13,7 @@ import { AssetDetailDrawer } from './components/Modal/AssetDetailDrawer';
 import { AIAssistantModal } from './modules/AIAssistant/AIAssistantModal';
 import { PulseConfigModal } from './components/Modal/PulseConfigModal';
 import { AuthModal } from './components/Modal/AuthModal';
-import { AuthProvider } from './core/auth/AuthContext';
+import { AuthProvider, useAuth } from './core/auth/AuthContext';
 import { Holding, MacroIndicatorConfig } from './data/types';
 import { VaultStorage } from './data/storage';
 import { INITIAL_PORTFOLIO_HOLDINGS } from './data/demoData';
@@ -23,10 +23,14 @@ import {
   Compass,
   SlidersHorizontal,
   Calculator,
-  Sparkles
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
+  X
 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
+  const { authNotice, clearAuthNotice } = useAuth();
   const [activeModule, setActiveModule] = useState<NavModule>('dashboard');
   const [workbenchTab, setWorkbenchTab] = useState<'compare' | 'screener' | 'scenarios' | 'goals'>('compare');
   const [holdings, setHoldings] = useState<Holding[]>(() => VaultStorage.getHoldings());
@@ -124,6 +128,61 @@ const AppContent: React.FC = () => {
           onOpenPulseConfig={() => setIsPulseConfigOpen(true)}
           onOpenAuth={() => setIsAuthModalOpen(true)}
         />
+
+        {/* Global Auth Status / Confirmation Banner */}
+        {authNotice && (
+          <div style={{
+            backgroundColor: authNotice.type === 'error' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+            borderBottom: `1px solid ${authNotice.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+            color: authNotice.type === 'error' ? 'var(--color-loss, #f87171)' : 'var(--color-gain, #10b981)',
+            padding: '10px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.84rem',
+            fontWeight: 500,
+            zIndex: 100
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {authNotice.type === 'error' ? <AlertCircle size={17} style={{ flexShrink: 0 }} /> : <CheckCircle2 size={17} style={{ flexShrink: 0 }} />}
+              <span>{authNotice.message}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {authNotice.type === 'error' && (
+                <button
+                  onClick={() => { setIsAuthModalOpen(true); clearAuthNotice(); }}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid currentColor',
+                    color: 'inherit',
+                    borderRadius: 6,
+                    padding: '3px 10px',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Open Log In
+                </button>
+              )}
+              <button
+                onClick={clearAuthNotice}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'inherit',
+                  cursor: 'pointer',
+                  padding: 4,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                title="Dismiss"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         <main className="content-area">
           {activeModule === 'dashboard' && (

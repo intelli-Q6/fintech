@@ -13,7 +13,14 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { signInWithEmail, signUpWithEmail, signInWithOtp, authError, clearAuthError } = useAuth();
+  const {
+    signInWithEmail,
+    signUpWithEmail,
+    signInWithOtp,
+    resendConfirmationEmail,
+    authError,
+    clearAuthError
+  } = useAuth();
   
   const [tab, setTab] = useState<'signin' | 'signup' | 'magic'>('signin');
   const [email, setEmail] = useState('');
@@ -22,6 +29,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   const [loading, setLoading] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -30,6 +40,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     if (!email) return;
     setLoading(true);
     clearAuthError();
+    setResendStatus(null);
 
     if (tab === 'signin') {
       const res = await signInWithEmail(email, password);
@@ -42,8 +53,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
       const res = await signUpWithEmail(email, password, fullName);
       setLoading(false);
       if (res.success) {
-        setSignupSuccess(true);
-        onSuccess?.();
+        if (res.needsConfirmation) {
+          setNeedsConfirmation(true);
+        } else {
+          setSignupSuccess(true);
+          onSuccess?.();
+        }
+      } else if (res.userAlreadyExists) {
+        setTab('signin');
       }
     } else if (tab === 'magic') {
       const res = await signInWithOtp(email);
@@ -51,6 +68,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
       if (res.success) {
         setMagicSent(true);
       }
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) return;
+    setResending(true);
+    setResendStatus(null);
+    const res = await resendConfirmationEmail(email);
+    setResending(false);
+    if (res.success) {
+      setResendStatus('Fresh confirmation link sent! Please check your inbox.');
+    } else {
+      setResendStatus(res.error || 'Failed to dispatch email. Please wait a moment and try again.');
     }
   };
 
@@ -219,8 +249,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           {authError && (
             <div style={{
               display: 'flex',
-              alignItems: 'flex-start',
-              gap: '8px',
+              flexDirection: 'column',
+              gap: '6px',
               padding: '10px 12px',
               marginBottom: '16px',
               borderRadius: '8px',
@@ -229,12 +259,116 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               color: 'var(--color-loss)',
               fontSize: '0.8rem'
             }}>
-              <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-              <span>{authError}</span>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <span>{authError}</span>
+              </div>
+              {authError.toLowerCase().includes('email not confirmed') && (
+                <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    disabled={resending}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid currentColor',
+                      color: 'inherit',
+                      borderRadius: 4,
+                      padding: '3px 8px',
+                      fontSize: '0.74rem',
+                      cursor: 'pointer',
+                      fontWeight: 600
+                    }}
+                  >
+                    {resending ? 'Sending...' : 'Resend confirmation link'}
+                  </button>
+                  {resendStatus && <span style={{ fontSize: '0.72rem' }}>{resendStatus}</span>}
+                </div>
+              )}
             </div>
           )}
 
-          {magicSent ? (
+          {needsConfirmation ? (
+            <div style={{ textAlign: 'center', padding: '12px 4px' }}>
+              <div style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 14px',
+                color: 'var(--accent-primary)'
+              }}>
+                <Mail size={24} />
+              </div>
+              <h4 style={{ margin: '0 0 6px', color: 'var(--text-primary)', fontSize: '1.05rem', fontWeight: 700 }}>
+                Confirm Your Email Address
+              </h4>
+              <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                We've sent a verification link to:
+              </p>
+              <div style={{
+                display: 'inline-block',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-default)',
+                borderRadius: '6px',
+                padding: '4px 12px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                marginBottom: '14px'
+              }}>
+                {email}
+              </div>
+              <p style={{ margin: '0 0 18px', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+                Please click the link inside your email to verify your account and activate cloud syncing.
+              </p>
+
+              {resendStatus && (
+                <div style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  marginBottom: '16px',
+                  backgroundColor: resendStatus.includes('sent') || resendStatus.includes('dispatched') ? 'var(--color-gain-bg, rgba(16,185,129,0.1))' : 'var(--color-loss-bg, rgba(239,68,68,0.1))',
+                  border: `1px solid ${resendStatus.includes('sent') || resendStatus.includes('dispatched') ? 'var(--color-gain-border, rgba(16,185,129,0.25))' : 'var(--color-loss-border, rgba(239,68,68,0.25))'}`,
+                  color: resendStatus.includes('sent') || resendStatus.includes('dispatched') ? 'var(--color-gain, #10b981)' : 'var(--color-loss, #f87171)',
+                  fontSize: '0.78rem'
+                }}>
+                  {resendStatus}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={resending}
+                  className="btn btn-secondary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '9px', fontSize: '0.82rem', fontWeight: 600 }}
+                >
+                  {resending ? 'Sending...' : 'Resend Verification Email'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setNeedsConfirmation(false); setTab('signin'); }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    padding: '6px',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Already verified? Back to Sign In
+                </button>
+              </div>
+            </div>
+          ) : magicSent ? (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <CheckCircle2 size={42} style={{ color: 'var(--color-gain)', margin: '0 auto 12px' }} />
               <h4 style={{ margin: '0 0 8px', color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 700 }}>Magic Link Dispatched</h4>
