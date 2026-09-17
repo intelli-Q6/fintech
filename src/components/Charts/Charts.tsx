@@ -492,3 +492,341 @@ export const CompoundGrowthChart: React.FC<{
     </div>
   );
 };
+
+// 7. Dynamic Filled Shield Check Icon for Portfolio Health
+export const FilledShieldCheck: React.FC<{
+  color: string;
+  size?: number;
+}> = ({ color, size = 16 }) => {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{
+        display: 'inline-block',
+        verticalAlign: 'middle',
+        filter: `drop-shadow(0 1px 4px ${color}60)`
+      }}
+    >
+      <path
+        d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+        fill={color}
+        stroke={color}
+      />
+      <path
+        d="m9 12 2 2 4-4"
+        stroke="#ffffff"
+        strokeWidth="2.5"
+        fill="none"
+      />
+    </svg>
+  );
+};
+
+// 8. Executive Isometric 3-D Pie Chart with Tactile Extruded Depth & Dynamic Shading
+export interface ThreeDPieSlice {
+  label: string;
+  value: number;
+  color: string;
+  colorDark?: string;
+  colorLight?: string;
+  subtext?: string;
+}
+
+export const ThreeDPieChart: React.FC<{
+  slices: ThreeDPieSlice[];
+  width?: number;
+  height?: number;
+  depth?: number;
+  rx?: number;
+  ry?: number;
+  centerOffsetY?: number;
+}> = ({
+  slices,
+  width = 160,
+  height = 100,
+  depth = 14,
+  rx = 58,
+  ry = 32,
+  centerOffsetY = -4
+}) => {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const chartId = useId();
+
+  const total = slices.reduce((sum, s) => sum + s.value, 0);
+  if (total === 0) return null;
+
+  const cx = width / 2;
+  const cy = height / 2 + centerOffsetY;
+  const TWO_PI = Math.PI * 2;
+  // Starting rotation offset so front half shows both Growth and Stability slices
+  const startOffset = -0.32 * Math.PI;
+
+  let currentAngle = startOffset;
+  const sliceMetas = slices.map((s, idx) => {
+    const span = (s.value / total) * TWO_PI;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + span;
+    const midAngle = startAngle + span / 2;
+    currentAngle = endAngle;
+
+    const pct = ((s.value / total) * 100).toFixed(0);
+    return {
+      ...s,
+      idx,
+      span,
+      startAngle,
+      endAngle,
+      midAngle,
+      pct
+    };
+  });
+
+  // Calculate visible front intervals for 3D extrusion wall
+  const getFrontIntervals = (startRad: number, endRad: number): [number, number][] => {
+    let s = ((startRad % TWO_PI) + TWO_PI) % TWO_PI;
+    let e = ((endRad % TWO_PI) + TWO_PI) % TWO_PI;
+    if (e <= s) e += TWO_PI;
+
+    const intervals: [number, number][] = [];
+    const fStart1 = Math.max(s, 0);
+    const fEnd1 = Math.min(e, Math.PI);
+    if (fStart1 < fEnd1) intervals.push([fStart1, fEnd1]);
+
+    const fStart2 = Math.max(s, TWO_PI);
+    const fEnd2 = Math.min(e, TWO_PI + Math.PI);
+    if (fStart2 < fEnd2) intervals.push([fStart2 - TWO_PI, fEnd2 - TWO_PI]);
+
+    return intervals;
+  };
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width,
+        height,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+      onMouseLeave={() => setHoveredIdx(null)}
+    >
+      <svg
+        width={width}
+        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        style={{ overflow: 'visible' }}
+      >
+        <defs>
+          {/* Soft Ground Shadow Filter */}
+          <filter id={`pie-shadow-${chartId}`} x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4" />
+            <feOffset dx="0" dy="5" result="offsetblur" />
+            <feComponentTransfer>
+              <feFuncA type="linear" slope="0.3" />
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          {/* Gradients for each slice's top face and extruded cylinder wall */}
+          {sliceMetas.map(meta => {
+            const baseColor = meta.color;
+            const darkColor = meta.colorDark || baseColor;
+            const lightColor = meta.colorLight || baseColor;
+
+            return (
+              <React.Fragment key={meta.idx}>
+                {/* Top Face Light Bevel Gradient */}
+                <linearGradient id={`top-grad-${chartId}-${meta.idx}`} x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor={lightColor} stopOpacity={1} />
+                  <stop offset="100%" stopColor={baseColor} stopOpacity={1} />
+                </linearGradient>
+
+                {/* 3D Cylinder Extruded Side Wall Gradient */}
+                <linearGradient id={`wall-grad-${chartId}-${meta.idx}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={baseColor} stopOpacity={0.95} />
+                  <stop offset="100%" stopColor={darkColor} stopOpacity={1} />
+                </linearGradient>
+              </React.Fragment>
+            );
+          })}
+        </defs>
+
+        {/* 1. Deep 3D Ground Elevation Drop Shadow */}
+        <ellipse
+          cx={cx}
+          cy={cy + depth + 4}
+          rx={rx * 0.96}
+          ry={ry * 0.85}
+          fill="rgba(0, 0, 0, 0.25)"
+          filter={`url(#pie-shadow-${chartId})`}
+        />
+
+        {/* 2. Extruded 3D Side Walls (Front Visible Rims) */}
+        {sliceMetas.map(meta => {
+          const isHovered = hoveredIdx === meta.idx;
+          const popDist = isHovered ? 4 : 0;
+          const dx = popDist * Math.cos(meta.midAngle);
+          const dy = popDist * Math.sin(meta.midAngle) * 0.6;
+          const frontIntervals = getFrontIntervals(meta.startAngle, meta.endAngle);
+
+          return frontIntervals.map(([fStart, fEnd], iIdx) => {
+            const x1 = cx + dx + rx * Math.cos(fStart);
+            const y1 = cy + dy + ry * Math.sin(fStart);
+            const x2 = cx + dx + rx * Math.cos(fEnd);
+            const y2 = cy + dy + ry * Math.sin(fEnd);
+
+            const wallPath = `
+              M ${x1.toFixed(1)} ${y1.toFixed(1)}
+              A ${rx} ${ry} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}
+              L ${x2.toFixed(1)} ${(y2 + depth).toFixed(1)}
+              A ${rx} ${ry} 0 0 0 ${x1.toFixed(1)} ${(y1 + depth).toFixed(1)}
+              Z
+            `;
+
+            return (
+              <path
+                key={`wall-${meta.idx}-${iIdx}`}
+                d={wallPath}
+                fill={`url(#wall-grad-${chartId}-${meta.idx})`}
+                stroke="rgba(0, 0, 0, 0.15)"
+                strokeWidth="0.5"
+                style={{
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                }}
+                onMouseEnter={() => setHoveredIdx(meta.idx)}
+              />
+            );
+          });
+        })}
+
+        {/* 3. Radial Cut Faces (Between Slices at Front Boundaries) */}
+        {sliceMetas.map(meta => {
+          const isHovered = hoveredIdx === meta.idx;
+          const popDist = isHovered ? 4 : 0;
+          const dx = popDist * Math.cos(meta.midAngle);
+          const dy = popDist * Math.sin(meta.midAngle) * 0.6;
+
+          // Boundary cut planes at start and end angles
+          const angles = [meta.startAngle, meta.endAngle];
+          return angles.map((ang, aIdx) => {
+            // Only draw cut planes facing somewhat forward
+            const sinA = Math.sin(ang);
+            if (sinA < -0.2) return null; // back-facing, hidden
+
+            const edgeX = cx + dx + rx * Math.cos(ang);
+            const edgeY = cy + dy + ry * Math.sin(ang);
+            const cutPath = `
+              M ${(cx + dx).toFixed(1)} ${(cy + dy).toFixed(1)}
+              L ${edgeX.toFixed(1)} ${edgeY.toFixed(1)}
+              L ${edgeX.toFixed(1)} ${(edgeY + depth).toFixed(1)}
+              L ${(cx + dx).toFixed(1)} ${(cy + dy + depth).toFixed(1)}
+              Z
+            `;
+
+            return (
+              <path
+                key={`cut-${meta.idx}-${aIdx}`}
+                d={cutPath}
+                fill={meta.colorDark || meta.color}
+                opacity={0.85}
+                stroke="rgba(0, 0, 0, 0.12)"
+                strokeWidth="0.5"
+                style={{
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                }}
+                onMouseEnter={() => setHoveredIdx(meta.idx)}
+              />
+            );
+          });
+        })}
+
+        {/* 4. Top Surface Slice Wedges */}
+        {sliceMetas.map(meta => {
+          const isHovered = hoveredIdx === meta.idx;
+          const popDist = isHovered ? 4 : 0;
+          const dx = popDist * Math.cos(meta.midAngle);
+          const dy = popDist * Math.sin(meta.midAngle) * 0.6;
+
+          const x1 = cx + dx + rx * Math.cos(meta.startAngle);
+          const y1 = cy + dy + ry * Math.sin(meta.startAngle);
+          const x2 = cx + dx + rx * Math.cos(meta.endAngle);
+          const y2 = cy + dy + ry * Math.sin(meta.endAngle);
+
+          const largeArc = meta.span > Math.PI ? 1 : 0;
+          const topPath = `
+            M ${(cx + dx).toFixed(1)} ${(cy + dy).toFixed(1)}
+            L ${x1.toFixed(1)} ${y1.toFixed(1)}
+            A ${rx} ${ry} 0 ${largeArc} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}
+            Z
+          `;
+
+          return (
+            <g key={`top-${meta.idx}`}>
+              <path
+                d={topPath}
+                fill={`url(#top-grad-${chartId}-${meta.idx})`}
+                stroke="rgba(255, 255, 255, 0.35)"
+                strokeWidth={isHovered ? 1.5 : 0.8}
+                style={{
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  filter: isHovered ? 'brightness(1.08)' : 'none'
+                }}
+                onMouseEnter={() => setHoveredIdx(meta.idx)}
+              />
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Interactive Floating Hover Pill */}
+      {hoveredIdx !== null && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: -6,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'var(--bg-surface-elevated, #1e293b)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 6,
+            padding: '2px 8px',
+            fontSize: '10px',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            pointerEvents: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            zIndex: 10
+          }}
+        >
+          <span
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              backgroundColor: sliceMetas[hoveredIdx].color
+            }}
+          />
+          <span>{sliceMetas[hoveredIdx].label}: {sliceMetas[hoveredIdx].pct}%</span>
+        </div>
+      )}
+    </div>
+  );
+};
+

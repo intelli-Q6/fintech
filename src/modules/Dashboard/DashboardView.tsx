@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Holding } from '../../data/types';
 import { formatINR, formatPercent } from '../../core/math/xirr';
 import { MetricCard } from '../../components/MetricCard/MetricCard';
-import { DonutChart, DonutSegment } from '../../components/Charts/Charts';
+import { DonutChart, DonutSegment, ThreeDPieChart, ThreeDPieSlice, FilledShieldCheck } from '../../components/Charts/Charts';
 import { MMIHeaderWidget, MMIModal } from '../../components/Charts/MarketMoodIndex';
 import { useMarketQuotes } from '../../core/market/useMarketQuotes';
 import {
@@ -150,6 +150,65 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const topHoldings = [...holdingsWithLive]
     .sort((a, b) => b.currentVal - a.currentVal)
     .slice(0, 5);
+
+  // Dynamic Portfolio Health & Risk Analysis
+  const maxHoldingWeight = holdingsWithLive.length > 0
+    ? Math.max(...holdingsWithLive.map(h => h.weight))
+    : 0;
+  const numAssetClasses = donutSegments.length;
+  const topHolding = topHoldings[0];
+
+  let healthStatus = 'Diversified';
+  let healthColor = '#10b981'; // Green
+  let healthDeltaType: 'gain' | 'loss' | 'neutral' = 'gain';
+  let healthBadge = 'Low Risk';
+  let healthDesc = `${holdings.length} Assets across ${numAssetClasses} Asset Classes`;
+
+  if (maxHoldingWeight > 35 || numAssetClasses < 2 || holdings.length < 3) {
+    healthStatus = 'High Risk';
+    healthColor = '#ef4444'; // Red
+    healthDeltaType = 'loss';
+    healthBadge = 'Concentrated';
+    healthDesc = topHolding
+      ? `High Concentration: ${topHolding.symbol} is ${maxHoldingWeight.toFixed(1)}%`
+      : 'Under-diversified portfolio';
+  } else if (maxHoldingWeight > 22 || numAssetClasses <= 3) {
+    healthStatus = 'Moderate Risk';
+    healthColor = '#f59e0b'; // Yellow / Amber
+    healthDeltaType = 'neutral';
+    healthBadge = 'Moderate';
+    healthDesc = topHolding
+      ? `Moderate Concentration: ${topHolding.symbol} is ${maxHoldingWeight.toFixed(1)}%`
+      : 'Moderate asset spread';
+  } else {
+    healthStatus = 'Diversified';
+    healthColor = '#10b981'; // Green
+    healthDeltaType = 'gain';
+    healthBadge = 'Optimal';
+    healthDesc = `${holdings.length} Assets across ${numAssetClasses} Asset Classes`;
+  }
+
+  // 3D Pie Chart Slices for Growth vs Stability
+  const growthNum = Number(growthPct) || 0;
+  const stabilityNum = Number(stabilityPct) || 0;
+  const growthSlices: ThreeDPieSlice[] = [
+    {
+      label: 'Growth',
+      value: growthNum > 0 ? growthNum : 52,
+      color: '#3b82f6',
+      colorDark: '#1d4ed8',
+      colorLight: '#60a5fa',
+      subtext: 'Equities & MFs'
+    },
+    {
+      label: 'Stability',
+      value: stabilityNum > 0 ? stabilityNum : 48,
+      color: '#10b981',
+      colorDark: '#047857',
+      colorLight: '#34d399',
+      subtext: 'Debt, Gold & Cash'
+    }
+  ];
 
   const getAssetPillClass = (ac: string) => {
     switch (ac) {
@@ -420,144 +479,190 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Streamlined Key Metrics */}
-      <div className="metrics-deck">
-        <MetricCard
-          label="Asset Split (Growth / Stability)"
-          value={`${growthPct}% / ${stabilityPct}%`}
-          subtext="Equities & MFs vs Debt, Gold & Cash"
-          deltaType="neutral"
-          icon={<PieChart size={13} />}
-        />
-        <MetricCard
-          label="Portfolio Health & Risk"
-          value="Diversified"
-          subtext={`${holdings.length} Assets across ${donutSegments.length} Asset Classes`}
-          deltaType="gain"
-          icon={<ShieldCheck size={13} />}
-        />
-      </div>
-
-      {/* 4. Dual Section Overview: Allocation Donut & Top 5 Core Holdings */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, alignItems: 'start' }}>
-        {/* Left Card: Multi-Asset Distribution */}
-        <div className="terminal-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
-              Multi-Asset Allocation
+      {/* 3. Asset Split (3-D Pie) & Portfolio Health Deck */}
+      <div className="dashboard-asset-health-grid">
+        {/* Left Card: 3-D Pie Chart for Asset Split (Growth / Stability) */}
+        <div className="terminal-card asset-split-3d-card">
+          <div className="card-header-row">
+            <span className="card-header-title">
+              Asset Split (Growth / Stability)
             </span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              {donutSegments.length} Classes
+            <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+              <PieChart size={13} />
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, flexWrap: 'wrap', flex: 1 }}>
-            <div style={{ flexShrink: 0 }}>
-              <DonutChart
-                segments={donutSegments}
-                size={140}
-                innerRadius={46}
+          <div className="asset-split-body">
+            {/* 3-D Pie Chart Visual */}
+            <div className="asset-split-chart-wrap">
+              <ThreeDPieChart
+                slices={growthSlices}
+                width={130}
+                height={84}
+                depth={12}
+                rx={46}
+                ry={25}
               />
             </div>
 
-            {/* Asset Breakdown Legend */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 160 }}>
-              {donutSegments.map(seg => {
-                const pct = liveTotalValue > 0 ? ((seg.value / liveTotalValue) * 100).toFixed(1) : '0.0';
-                return (
-                  <div key={seg.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, flexShrink: 0 }} />
-                      <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{seg.name}</span>
-                    </div>
-                    <span className="tabular-nums" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {formatINR(seg.value, { compact: true })}{' '}
-                      <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 400 }}>({pct}%)</span>
-                    </span>
-                  </div>
-                );
-              })}
+            {/* Split Readout & Asset Class Breakdown */}
+            <div className="asset-split-info">
+              <div className="asset-split-pct-row">
+                <span style={{ color: '#3b82f6', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                  {growthPct}%
+                </span>
+                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>/</span>
+                <span style={{ color: '#10b981', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                  {stabilityPct}%
+                </span>
+              </div>
+              <div className="asset-split-subtext">
+                Equities & MFs vs Debt, Gold & Cash
+              </div>
+
+              {/* Mini Tags for Amounts */}
+              <div className="asset-split-tags">
+                <span className="split-tag growth">
+                  <span className="split-tag-dot" style={{ background: '#3b82f6' }} />
+                  <span>Growth: {formatINR(growthAssets, { compact: true })}</span>
+                </span>
+                <span className="split-tag stability">
+                  <span className="split-tag-dot" style={{ background: '#10b981' }} />
+                  <span>Stability: {formatINR(stabilityAssets, { compact: true })}</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Card: Top 5 Core Holdings Snapshot */}
-        <div className="terminal-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
-              Top Core Positions
+        {/* Right Card: Portfolio Health & Risk (Shifted to the Yellow Place) */}
+        <div className="terminal-card health-risk-card">
+          <div className="card-header-row">
+            <span className="card-header-title">
+              Portfolio Health & Risk
             </span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              Top {topHoldings.length} of {holdings.length}
+            {/* Symbol circled in blue intact, filled with dynamic health color */}
+            <span title={`Health status: ${healthStatus}`} style={{ display: 'flex', alignItems: 'center' }}>
+              <FilledShieldCheck color={healthColor} size={18} />
             </span>
           </div>
 
-          {/* Holdings List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {topHoldings.map(h => (
-              <div
-                key={h.id}
-                onClick={() => onSelectHolding(h)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s ease, transform 0.1s ease'
-                }}
-                className="holding-snapshot-row"
-                title={`Click to inspect fundamental factsheet for ${h.symbol}`}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 120 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                      {h.symbol}
-                    </span>
-                    <span className={`asset-pill ${getAssetPillClass(h.assetClass)}`} style={{ fontSize: '9px', padding: '1px 5px' }}>
-                      {h.assetClass.replace('_', ' ')}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {h.name}
-                  </span>
-                </div>
-
-                {/* Weight bar & Current Value */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 70 }}>
-                    <span className="tabular-nums" style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text-primary)' }}>
-                      {formatINR(h.currentVal)}
-                    </span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                      {h.weight.toFixed(1)}% weight
-                    </span>
-                  </div>
-
-                  <span className={`delta-badge ${h.gain >= 0 ? 'gain' : 'loss'}`} style={{ fontSize: '10px', padding: '2px 6px', minWidth: 50, textAlign: 'center' }}>
-                    {h.gain >= 0 ? '+' : ''}{h.gainPct.toFixed(1)}%
-                  </span>
-
-                  <ChevronRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                </div>
+          <div className="health-card-body">
+            <div className="health-status-row">
+              <div className="health-status-text" style={{ color: healthColor }}>
+                {healthStatus}
               </div>
-            ))}
-          </div>
+              <span className={`delta-badge ${healthDeltaType}`} style={{ fontSize: '11px', padding: '2px 7px' }}>
+                {healthBadge}
+              </span>
+            </div>
 
-          {/* Footer Link to Full Ledger */}
-          <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              onClick={() => onNavigate('vault')}
-              className="btn btn-ghost btn-sm"
-              style={{ fontSize: '11px', color: 'var(--accent-primary)', padding: '2px 6px', gap: 4 }}
-            >
-              <span>View all {holdings.length} holdings in Portfolio Vault</span>
-              <ArrowRight size={11} />
-            </button>
+            <div className="health-subtext">
+              {healthDesc}
+            </div>
+
+            {/* Visual Risk Spectrum Meter */}
+            <div className="health-risk-meter-wrap">
+              <div className="health-risk-meter-bar">
+                <div
+                  className={`meter-segment low ${healthStatus === 'Diversified' ? 'active' : ''}`}
+                  title="Low Risk / Diversified"
+                />
+                <div
+                  className={`meter-segment moderate ${healthStatus === 'Moderate Risk' ? 'active' : ''}`}
+                  title="Moderate Risk"
+                />
+                <div
+                  className={`meter-segment high ${healthStatus === 'High Risk' ? 'active' : ''}`}
+                  title="High Concentration Risk"
+                />
+              </div>
+              <div className="health-risk-labels">
+                <span>Diversified</span>
+                <span>Moderate</span>
+                <span>High Risk</span>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* 4. Top Core Positions (Spanning full width, Multi-Asset Allocation removed) */}
+      <div className="terminal-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+            Top Core Positions
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            Top {topHoldings.length} of {holdings.length}
+          </span>
+        </div>
+
+        {/* Holdings List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {topHoldings.map(h => (
+            <div
+              key={h.id}
+              onClick={() => onSelectHolding(h)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-subtle)',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s ease, transform 0.1s ease'
+              }}
+              className="holding-snapshot-row"
+              title={`Click to inspect fundamental factsheet for ${h.symbol}`}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 140 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                    {h.symbol}
+                  </span>
+                  <span className={`asset-pill ${getAssetPillClass(h.assetClass)}`} style={{ fontSize: '9px', padding: '1px 5px' }}>
+                    {h.assetClass.replace('_', ' ')}
+                  </span>
+                </div>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {h.name}
+                </span>
+              </div>
+
+              {/* Weight bar & Current Value */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 90 }}>
+                  <span className="tabular-nums" style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>
+                    {formatINR(h.currentVal)}
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {h.weight.toFixed(1)}% weight
+                  </span>
+                </div>
+
+                <span className={`delta-badge ${h.gain >= 0 ? 'gain' : 'loss'}`} style={{ fontSize: '11px', padding: '2px 8px', minWidth: 56, textAlign: 'center' }}>
+                  {h.gain >= 0 ? '+' : ''}{h.gainPct.toFixed(1)}%
+                </span>
+
+                <ChevronRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer Link to Full Ledger */}
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={() => onNavigate('vault')}
+            className="btn btn-ghost btn-sm"
+            style={{ fontSize: '11px', color: 'var(--accent-primary)', padding: '2px 6px', gap: 4 }}
+          >
+            <span>View all {holdings.length} holdings in Portfolio Vault</span>
+            <ArrowRight size={11} />
+          </button>
         </div>
       </div>
 
