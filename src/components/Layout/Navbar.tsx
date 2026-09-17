@@ -369,10 +369,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={onOpenAuth}
             className="btn-auth-signature"
-            title="Log In / Register"
+            title="Sign In / Register"
           >
             <User size={13} />
-            <span className="auth-btn-text">Log In</span>
+            <span className="auth-btn-text">Sign In</span>
           </button>
         )}
       </div>

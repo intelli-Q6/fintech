@@ -162,7 +162,7 @@ const AppContent: React.FC = () => {
                     fontWeight: 600
                   }}
                 >
-                  Open Log In
+                  Open Sign In
                 </button>
               )}
               <button
