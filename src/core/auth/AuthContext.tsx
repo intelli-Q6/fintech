@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const raw = errorDesc ? decodeURIComponent(errorDesc).replace(/\+/g, ' ') : '';
           let msg = raw || 'Authentication link failed or is invalid.';
           if (errorCode === 'otp_expired' || raw.toLowerCase().includes('expired')) {
-            msg = 'Your email confirmation link has expired or has already been used. Please log in or request a fresh confirmation link.';
+            msg = 'Your email confirmation link has expired or has already been used. Please sign in or request a fresh confirmation link.';
           } else if (errorCode === 'access_denied' || raw.toLowerCase().includes('denied')) {
             msg = 'Authentication request was denied. Please verify your credentials and try again.';
           }
