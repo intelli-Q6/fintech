@@ -1776,6 +1776,14 @@
   display: none;
 }
 
+.hero-today-badge-mobile {
+  display: none;
+}
+
+.hero-xirr-mobile {
+  display: none;
+}
+
 .hero-badges-row {
   display: flex;
   align-items: center;
@@ -1852,7 +1860,7 @@
   .hero-networth-val {
     font-size: clamp(23px, 6vw, 28px) !important;
   }
-  /* Mobile-only: Total Returns in the top-right (fills the space marked in pink!) */
+  /* Mobile-only: Total Returns in the top-right */
   .hero-mobile-return-stat {
     display: flex !important;
     flex-direction: column;
@@ -1860,9 +1868,17 @@
     text-align: right;
     flex-shrink: 0;
   }
+  .hero-today-badge-mobile {
+    display: flex !important;
+    margin-top: 6px !important;
+  }
+  .hero-xirr-mobile {
+    display: flex !important;
+    margin-top: 6px !important;
+    align-self: flex-end !important;
+  }
   .hero-badges-row {
-    justify-content: space-between !important;
-    gap: 6px !important;
+    display: none !important;
   }
   .hero-badges-row .delta-badge {
     font-size: 11px !important;
@@ -1915,6 +1931,12 @@
   }
   .mmi-zone-row > div:last-child {
     text-align: left !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-xirr-benchmark {
+    display: none !important;
   }
 }
 

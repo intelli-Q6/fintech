@@ -253,9 +253,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="hero-networth-val">
                   {formatINR(liveTotalValue)}
                 </div>
+                {/* Mobile Today Delta Badge directly under Net Worth */}
+                {daysTotalChange !== 0 && (
+                  <div className="hero-today-badge-mobile">
+                    <span
+                      className={`delta-badge ${daysTotalChange >= 0 ? 'gain' : 'loss'}`}
+                      style={{ fontSize: '11px', padding: '2.5px 7px', borderRadius: 5, fontWeight: 600 }}
+                    >
+                      {daysTotalChange >= 0 ? '▲ +' : '▼ '}{formatINR(Math.abs(daysTotalChange))} ({daysChangePercent >= 0 ? '+' : ''}{daysChangePercent.toFixed(2)}%) Today
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Mobile-Only Right Column: Total Returns (Fills the pink space from Pic 1) */}
+              {/* Mobile-Only Right Column: Total Returns and XIRR directly below it */}
               <div className="hero-mobile-return-stat">
                 <div className="hero-stat-label" style={{ textAlign: 'right' }}>
                   Total Returns
@@ -276,10 +287,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     ({formatPercent(liveGainPercent, true)})
                   </span>
                 </div>
+
+                {/* Mobile XIRR Badge: Placed directly below Total Returns (Mobile Only) */}
+                <div className="hero-xirr-mobile">
+                  <div
+                    className="hero-xirr-badge"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '2.5px 7px',
+                      borderRadius: 5,
+                      background: 'rgba(5, 150, 105, 0.08)',
+                      border: '1px solid rgba(5, 150, 105, 0.2)',
+                      fontSize: '10.5px'
+                    }}
+                    title="Portfolio Extended Internal Rate of Return (Benchmark: Nifty 50 TRI 14.4%)"
+                  >
+                    <TrendingUp size={10.5} style={{ color: 'var(--color-gain)' }} />
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>XIRR:</span>
+                    <strong style={{ color: 'var(--color-gain)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>16.82%</strong>
+                    <span className="hero-xirr-benchmark" style={{ fontSize: '9px', color: 'var(--color-gain)', fontWeight: 600, background: 'rgba(16, 185, 129, 0.12)', padding: '1px 4px', borderRadius: 4 }}>
+                      +2.4% vs Nifty
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Badges row: Today's change & Portfolio XIRR */}
+            {/* Desktop Badges row: Today's change & Portfolio XIRR (Desktop only) */}
             <div className="hero-badges-row">
               {daysTotalChange !== 0 && (
                 <span
@@ -290,7 +326,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
               )}
 
-              {/* Portfolio XIRR Badge */}
+              {/* Portfolio XIRR Badge (Desktop) */}
               <div
                 className="hero-xirr-badge"
                 style={{
