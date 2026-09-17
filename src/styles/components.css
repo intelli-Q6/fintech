@@ -1717,8 +1717,111 @@
   }
 }
 
+/* Hero Net Worth Card Layout (Desktop) */
+.hero-networth-card {
+  padding: 22px 26px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  position: relative;
+}
+
+.hero-networth-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: 100%;
+}
+
+.hero-wealth-stats {
+  flex: 1 1 380px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.hero-stat-primary {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.hero-networth-val {
+  font-size: 32px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+
+.hero-mobile-return-stat {
+  display: none;
+}
+
+.hero-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.hero-submetrics-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.hero-desktop-gain-divider {
+  display: inline;
+  color: var(--border-subtle);
+}
+
+.hero-desktop-gain {
+  display: inline;
+}
+
+.hero-mobile-assets-count {
+  display: none;
+}
+
+.dashboard-allocation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 420px;
+  max-width: 580px;
+  min-width: 280px;
+  padding: 14px 20px;
+  background: var(--bg-subtle, rgba(255,255,255,0.02));
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.06));
+  border-radius: var(--radius-md, 10px);
+}
+
 /* Dashboard & MMI Mobile Enhancements */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .dashboard-header-actions {
     width: 100%;
     display: flex;
@@ -1731,27 +1834,69 @@
   .hero-networth-card {
     padding: 16px 14px !important;
   }
-  .hero-top-row {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
+  .hero-networth-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
   }
   .hero-wealth-stats {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-  .hero-split-donut-widget {
-    flex-shrink: 0;
-    padding: 6px 8px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: 100% !important;
     gap: 8px !important;
+  }
+  .hero-stats-header {
+    width: 100%;
+    align-items: flex-start;
+  }
+  .hero-networth-val {
+    font-size: clamp(23px, 6vw, 28px) !important;
+  }
+  /* Mobile-only: Total Returns in the top-right (fills the space marked in pink!) */
+  .hero-mobile-return-stat {
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .hero-badges-row {
+    justify-content: space-between !important;
+    gap: 6px !important;
+  }
+  .hero-badges-row .delta-badge {
+    font-size: 11px !important;
+    padding: 2.5px 7px !important;
+  }
+  .hero-xirr-badge {
+    font-size: 10.5px !important;
+    padding: 2.5px 7px !important;
+  }
+  .hero-submetrics-row {
+    font-size: 11px !important;
+    justify-content: space-between !important;
+    margin-top: 8px !important;
+    padding-top: 6px !important;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .hero-desktop-gain-divider {
+    display: none !important;
+  }
+  .hero-desktop-gain {
+    display: none !important;
+  }
+  .hero-mobile-assets-count {
+    display: inline !important;
+    font-size: 11px !important;
+    margin-left: auto;
   }
   .dashboard-allocation-card {
     flex: 1 1 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
+    width: 100% !important;
     padding: 12px 14px !important;
+    margin-top: 0 !important;
   }
   .mmi-header-card {
     width: 100%;
