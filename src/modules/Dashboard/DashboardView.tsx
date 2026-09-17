@@ -242,19 +242,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           position: 'relative'
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 6 }}>
+        <div className="hero-top-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+          {/* Left Column: Consolidated Net Worth Figures */}
+          <div className="hero-wealth-stats" style={{ flex: '1 1 200px', minWidth: 180 }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 4 }}>
               Consolidated Net Worth
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+              <span className="hero-networth-val" style={{ fontSize: 'clamp(24px, 5.5vw, 32px)', fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
                 {formatINR(liveTotalValue)}
               </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
               {daysTotalChange !== 0 && (
                 <span
                   className={`delta-badge ${daysTotalChange >= 0 ? 'gain' : 'loss'}`}
-                  style={{ fontSize: '12px', padding: '3px 8px', borderRadius: 6, fontWeight: 600 }}
+                  style={{ fontSize: '11px', padding: '2px 7px', borderRadius: 5, fontWeight: 600 }}
                 >
                   {daysTotalChange >= 0 ? '▲ +' : '▼ '}{formatINR(Math.abs(daysTotalChange))} ({daysChangePercent >= 0 ? '+' : ''}{daysChangePercent.toFixed(2)}%) Today
                 </span>
@@ -265,9 +269,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 5,
-                  padding: '3px 8px',
-                  borderRadius: 6,
+                  gap: 4,
+                  padding: '2px 7px',
+                  borderRadius: 5,
                   background: 'rgba(5, 150, 105, 0.08)',
                   border: '1px solid rgba(5, 150, 105, 0.2)',
                   fontSize: '11px'
@@ -277,36 +281,81 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <TrendingUp size={11} style={{ color: 'var(--color-gain)' }} />
                 <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>XIRR:</span>
                 <strong style={{ color: 'var(--color-gain)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>16.82%</strong>
-                <span style={{ fontSize: '9.5px', color: 'var(--color-gain)', fontWeight: 600, background: 'rgba(16, 185, 129, 0.12)', padding: '1px 4px', borderRadius: 4 }}>
-                  +2.4% vs Nifty
-                </span>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10, fontSize: '12px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
-              <span>Invested Capital: <strong style={{ color: 'var(--text-primary)' }}>{formatINR(totalInvested)}</strong></span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, fontSize: '11.5px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+              <span>Invested: <strong style={{ color: 'var(--text-primary)' }}>{formatINR(totalInvested)}</strong></span>
               <span style={{ color: 'var(--border-subtle)' }}>•</span>
-              <span>Total Gain: <strong style={{ color: liveTotalGain >= 0 ? 'var(--color-gain)' : 'var(--color-loss)' }}>
+              <span>Gain: <strong style={{ color: liveTotalGain >= 0 ? 'var(--color-gain)' : 'var(--color-loss)' }}>
                 {liveTotalGain >= 0 ? '+' : ''}{formatINR(liveTotalGain)} ({formatPercent(liveGainPercent, true)})
               </strong></span>
             </div>
           </div>
 
-          {/* Asset Allocation Bar (Executive 4-Category Pill Design) */}
+          {/* Right Column: Mini Portfolio Composition & Growth/Stability Ring (Utilizes the blank space marked in Pink) */}
           <div
-            className="dashboard-allocation-card"
+            className="hero-split-donut-widget"
+            title="Portfolio Asset Composition & Stability Ratio"
             style={{
               display: 'flex',
-              flexDirection: 'column',
+              alignItems: 'center',
               gap: 12,
-              flex: '1 1 420px',
-              maxWidth: 580,
-              minWidth: 280,
-              padding: '14px 20px',
+              padding: '8px 12px',
               background: 'var(--bg-subtle, rgba(255,255,255,0.02))',
               border: '1px solid var(--border-subtle, rgba(255,255,255,0.06))',
-              borderRadius: 'var(--radius-md, 10px)'
+              borderRadius: 'var(--radius-md, 10px)',
+              flexShrink: 0
             }}
           >
+            <div style={{ position: 'relative', width: 70, height: 70, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <DonutChart
+                segments={donutSegments}
+                size={70}
+                innerRadius={23}
+              />
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 }}>
+                  {holdings.length}
+                </span>
+                <span style={{ fontSize: '7.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 1 }}>
+                  Assets
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb', flexShrink: 0 }} />
+                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Growth:</span>
+                <strong style={{ fontSize: '11px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{growthPct}%</strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706', flexShrink: 0 }} />
+                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Stability:</span>
+                <strong style={{ fontSize: '11px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{stabilityPct}%</strong>
+              </div>
+              <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--color-gain)', background: 'rgba(16, 185, 129, 0.12)', padding: '1px 5px', borderRadius: 4, textAlign: 'center', letterSpacing: '0.02em' }}>
+                Balanced Mix
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: Continuous Asset Allocation Pill Bar (Spans full width cleanly beneath) */}
+        <div
+          className="dashboard-allocation-card"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            marginTop: 14,
+            padding: '12px 16px',
+            background: 'var(--bg-subtle, rgba(255,255,255,0.02))',
+            border: '1px solid var(--border-subtle, rgba(255,255,255,0.06))',
+            borderRadius: 'var(--radius-md, 10px)'
+          }}
+        >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-primary)' }}>
                 Asset Allocation
@@ -368,7 +417,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
         </div>
-      </div>
 
       {/* 3. Streamlined Key Metrics */}
       <div className="metrics-deck">

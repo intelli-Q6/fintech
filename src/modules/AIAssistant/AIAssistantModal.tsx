@@ -41,7 +41,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
   const [showKeyConfig, setShowKeyConfig] = useState(false);
   const [keySavedToast, setKeySavedToast] = useState(false);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const [messages, setMessages] = useState<AIMessage[]>([
     {
@@ -51,9 +51,11 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
     }
   ]);
 
-  // Auto-scroll to latest message
+  // Direct vertical scroll without shifting iOS Safari viewport or parent containers
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [messages, isLoading]);
 
   const handleSaveKey = (e: React.FormEvent) => {
@@ -130,13 +132,13 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
   return (
     <div className="drawer-backdrop" onClick={onClose}>
       <div
-        className="drawer-panel"
+        className="drawer-panel ai-drawer-panel"
         style={{ maxWidth: 'min(580px, 100%)', display: 'flex', flexDirection: 'column' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Drawer Header */}
-        <div className="drawer-header" style={{ padding: '12px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="drawer-header" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <div
               style={{
                 width: 32,
@@ -147,21 +149,23 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--accent-primary)'
+                color: 'var(--accent-primary)',
+                flexShrink: 0
               }}
             >
               <Sparkles size={16} />
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.02em', margin: 0, color: 'var(--text-primary)' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.02em', margin: 0, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                   KoshQ AI
                 </h3>
                 <span
+                  className="ai-active-badge"
                   style={{
                     fontSize: '9.5px',
                     fontWeight: '700',
-                    padding: '2px 7px',
+                    padding: '2px 6px',
                     borderRadius: 4,
                     background: 'rgba(16, 185, 129, 0.12)',
                     color: '#10b981',
@@ -169,27 +173,28 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 4,
-                    letterSpacing: '0.02em'
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
-                  {apiKey ? 'GEMINI 1.5 LIVE' : 'AI COPILOT ACTIVE'}
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
+                  <span className="ai-badge-text">{apiKey ? 'GEMINI 1.5' : 'AI ACTIVE'}</span>
                 </span>
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 1 }}>
-                Institutional Portfolio & Financial Copilot
+              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Institutional Portfolio &amp; Financial Copilot
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
             <button
               onClick={() => setShowKeyConfig(!showKeyConfig)}
-              className="btn btn-ghost btn-sm"
+              className="btn btn-ghost btn-sm ai-key-btn"
               style={{
                 fontSize: '11px',
-                padding: '4px 9px',
-                gap: 5,
+                padding: '4px 8px',
+                gap: 4,
                 height: 28,
                 border: '1px solid var(--border-subtle)',
                 borderRadius: '6px',
@@ -198,17 +203,22 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
               title="Configure Google Gemini API Key (Optional)"
             >
               <Key size={12} style={{ color: apiKey ? 'var(--color-gain)' : 'var(--text-muted)' }} />
-              <span>{apiKey ? 'Custom Key' : 'API Key'}</span>
+              <span className="ai-key-btn-text">{apiKey ? 'Key' : 'API Key'}</span>
             </button>
             <button
               onClick={handleResetChat}
               className="btn btn-ghost btn-sm"
-              style={{ padding: 5, height: 28, width: 28 }}
+              style={{ padding: 5, height: 28, width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               title="Reset Conversation"
             >
               <RotateCcw size={13} />
             </button>
-            <button onClick={onClose} className="btn btn-ghost btn-sm" style={{ padding: 5, height: 28, width: 28 }}>
+            <button
+              onClick={onClose}
+              className="btn btn-ghost btn-sm"
+              style={{ padding: 5, height: 28, width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Close"
+            >
               <X size={16} />
             </button>
           </div>
@@ -282,17 +292,19 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
         {/* Active Context Banner */}
         <div
           style={{
-            padding: '6px 18px',
+            padding: '6px 16px',
             background: 'var(--bg-subtle)',
             borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '4px 8px',
             fontSize: '10px'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-gain)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-gain)', flexShrink: 0 }} />
             <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
               Active Ledger Context:
             </span>
@@ -301,20 +313,23 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
             </span>
           </div>
 
-          <span style={{ color: 'var(--text-muted)' }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: '9.5px', whiteSpace: 'nowrap' }}>
             SEBI Non-Intermediary
           </span>
         </div>
 
         {/* Message Stream */}
         <div
+          ref={chatContainerRef}
           style={{
             flex: 1,
             overflowY: 'auto',
+            overflowX: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             gap: 12,
-            padding: '14px 18px'
+            padding: '12px 16px',
+            minHeight: 0
           }}
         >
           {messages.map(m => (
@@ -322,7 +337,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
               key={m.id}
               style={{
                 alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
-                maxWidth: '88%',
+                maxWidth: '92%',
                 background: m.sender === 'user'
                   ? 'var(--accent-primary)'
                   : m.isInterception
@@ -335,10 +350,12 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                   : '1px solid var(--border-subtle)',
                 color: m.sender === 'user' ? '#ffffff' : 'var(--text-primary)',
                 padding: '10px 14px',
-                borderRadius: 'var(--radius-sm)',
+                borderRadius: 'var(--radius-sm, 8px)',
                 fontSize: '12px',
                 lineHeight: 1.6,
                 whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                boxSizing: 'border-box',
                 boxShadow: m.sender === 'assistant' ? 'var(--shadow-sm)' : 'none'
               }}
             >
@@ -379,7 +396,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                 background: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 padding: '10px 14px',
-                borderRadius: 'var(--radius-sm)',
+                borderRadius: 'var(--radius-sm, 8px)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
@@ -391,44 +408,42 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
               <span>Analyzing portfolio context & synthesizing answer...</span>
             </div>
           )}
-
-          <div ref={messagesEndRef} />
         </div>
 
-        {/* Suggested Quick Questions */}
-        <div style={{ padding: '8px 18px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}>
-          <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase' }}>
+        {/* Suggested Quick Questions (Horizontally scrolling rail on mobile) */}
+        <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}>
+          <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Portfolio Analytical Prompts
           </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <div className="ai-prompts-rail">
             <button
               onClick={() => handleSend('Analyze concentration risk in my portfolio')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '10px', padding: '3px 8px', borderRadius: 4 }}
+              className="preset-chip"
+              style={{ fontSize: '11px', whiteSpace: 'nowrap' }}
               disabled={isLoading}
             >
               Concentration Risk Diagnosis
             </button>
             <button
               onClick={() => handleSend('How do Budget 2024 LTCG and STCG tax rules impact my holdings?')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '10px', padding: '3px 8px', borderRadius: 4 }}
+              className="preset-chip"
+              style={{ fontSize: '11px', whiteSpace: 'nowrap' }}
               disabled={isLoading}
             >
               Budget 2024 Tax Impact
             </button>
             <button
               onClick={() => handleSend('What is my equity vs debt allocation and how can I rebalance with SIPs?')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '10px', padding: '3px 8px', borderRadius: 4 }}
+              className="preset-chip"
+              style={{ fontSize: '11px', whiteSpace: 'nowrap' }}
               disabled={isLoading}
             >
               Tax-Smart SIP Rebalancing
             </button>
             <button
               onClick={() => handleSend('Should I buy Reliance right now?')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '10px', padding: '3px 8px', borderRadius: 4, color: 'var(--color-warning)' }}
+              className="preset-chip"
+              style={{ fontSize: '11px', whiteSpace: 'nowrap', color: 'var(--color-warning)' }}
               disabled={isLoading}
               title="Tests the SEBI regulatory guardrail interception"
             >
@@ -438,7 +453,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
         </div>
 
         {/* Input Bar */}
-        <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}>
+        <div style={{ padding: '10px 16px max(12px, env(safe-area-inset-bottom, 0px)) 16px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}>
           <form onSubmit={e => { e.preventDefault(); handleSend(); }} style={{ display: 'flex', gap: 8 }}>
             <input
               type="text"
@@ -459,10 +474,10 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
             </button>
           </form>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '10px', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '9.5px', color: 'var(--text-muted)' }}>
               <ShieldCheck size={11} style={{ color: 'var(--accent-primary)' }} />
-              <span>Zero-Egress: Financial data is processed in-memory. Zero storage on external servers.</span>
+              <span>Zero-Egress: In-memory analytical processing. Zero external storage.</span>
             </div>
           </div>
         </div>
