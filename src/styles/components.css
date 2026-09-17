@@ -1764,7 +1764,7 @@
 }
 
 .hero-networth-val {
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 800;
   font-family: var(--font-mono);
   letter-spacing: -0.03em;
@@ -1867,7 +1867,7 @@
     white-space: nowrap !important;
   }
   .hero-networth-val {
-    font-size: clamp(23px, 6vw, 28px) !important;
+    font-size: clamp(19px, 5vw, 22px) !important;
     line-height: 1.2 !important;
   }
   /* Mobile-only: Total Returns in the top-right */
