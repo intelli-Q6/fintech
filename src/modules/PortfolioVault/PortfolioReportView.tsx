@@ -37,7 +37,7 @@ interface PortfolioReportViewProps {
 type Timeframe = '1M' | '3M' | '6M' | '1Y' | '3Y' | '5Y' | 'ALL';
 
 export const PortfolioReportView: React.FC<PortfolioReportViewProps> = ({ holdings }) => {
-  const { isPro, isProPlus, openUpgradeModal } = useSubscription();
+  const { tier, setTier, isPro, isProPlus, openUpgradeModal } = useSubscription();
   const [selectedRange, setSelectedRange] = useState<Timeframe>('1Y');
 
   const reportDate = new Date();
@@ -161,6 +161,42 @@ export const PortfolioReportView: React.FC<PortfolioReportViewProps> = ({ holdin
                 }}
               >
                 {t}
+              </button>
+            ))}
+          </div>
+
+          {/* Preview Tier Quick Toggle (Testing & Demonstration) */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: 'var(--bg-subtle)',
+            borderRadius: 8,
+            padding: 3,
+            border: '1px solid var(--border-subtle)',
+            gap: 2
+          }} title="Instant tier switcher for testing and previewing">
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, padding: '0 5px' }}>
+              Tier:
+            </span>
+            {(['free', 'pro', 'pro_plus'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setTier(t)}
+                style={{
+                  padding: '3px 8px',
+                  fontSize: '11px',
+                  fontWeight: tier === t ? 700 : 500,
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  background: tier === t
+                    ? (t === 'pro_plus' ? '#d97706' : t === 'pro' ? 'var(--accent-primary)' : 'var(--text-secondary)')
+                    : 'transparent',
+                  color: tier === t ? '#ffffff' : 'var(--text-muted)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {t === 'free' ? 'Free' : t === 'pro' ? 'Pro' : 'Pro+'}
               </button>
             ))}
           </div>

@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { VaultStorage } from '../../data/storage';
+import { useSubscription } from '../../core/auth/useSubscription';
 import { Download, Upload, Trash2, CheckCircle, ShieldCheck, Sparkles, Check, Key, Lock, ExternalLink } from 'lucide-react';
 
 interface SettingsViewProps {
@@ -13,6 +14,7 @@ interface SettingsViewProps {
 export const SettingsView: React.FC<SettingsViewProps> = ({
   onDataReset
 }) => {
+  const { tier, setTier } = useSubscription();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [aiKey, setAiKey] = useState(() => VaultStorage.getAIApiKey());
   const [keyInput, setKeyInput] = useState('');
@@ -216,13 +218,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </li>
             </ul>
 
-            <button className="btn btn-secondary" style={{ width: '100%', marginTop: 20 }}>
-              Current Active Plan
+            <button
+              onClick={() => setTier('free')}
+              className={`btn ${tier === 'free' ? 'btn-secondary' : 'btn-ghost'}`}
+              style={{ width: '100%', marginTop: 20, fontWeight: 700 }}
+            >
+              {tier === 'free' ? '✓ Active Free Plan' : 'Switch to Free Tier'}
             </button>
           </div>
 
           {/* Pro Tier */}
-          <div className="terminal-card" style={{ padding: 20, borderColor: 'var(--accent-primary)', position: 'relative' }}>
+          <div className="terminal-card" style={{ padding: 20, borderColor: tier === 'pro' ? 'var(--accent-primary)' : undefined, position: 'relative' }}>
             <span style={{
               position: 'absolute',
               top: 12,
@@ -249,29 +255,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             <ul style={{ listStyle: 'none', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: 8, color: 'var(--text-secondary)' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Check size={13} style={{ color: 'var(--color-gain)' }} /> Unlimited Portfolios & CAS Statements
+                <Check size={13} style={{ color: 'var(--color-gain)' }} /> Flagship 20-Section Portfolio Report
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Check size={13} style={{ color: 'var(--color-gain)' }} /> Full Portfolio X-Ray (HHI, Overlap)
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Check size={13} style={{ color: 'var(--color-gain)' }} /> Unlimited Scenario Lab Stress Tests
+                <Check size={13} style={{ color: 'var(--color-gain)' }} /> Institutional Risk (Beta, Sharpe, Sortino, VaR)
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Check size={13} style={{ color: 'var(--color-gain)' }} /> Historical Crisis Stress Testing
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Check size={13} style={{ color: 'var(--color-gain)' }} /> FY Capital Gains Tax Reports (ITR Ready)
               </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Check size={13} style={{ color: 'var(--color-gain)' }} /> Annual Report Analyser (10 docs/mo)
-              </li>
             </ul>
 
-            <button className="btn btn-primary" style={{ width: '100%', marginTop: 20 }}>
-              Upgrade to Pro (Demo)
+            <button
+              onClick={() => setTier('pro')}
+              className={`btn ${tier === 'pro' ? 'btn-secondary' : 'btn-primary'}`}
+              style={{ width: '100%', marginTop: 20, fontWeight: 700 }}
+            >
+              {tier === 'pro' ? '✓ Active Pro Member' : 'Activate KoshQ Pro (Demo)'}
             </button>
           </div>
 
           {/* Pro+ Tier */}
-          <div className="terminal-card" style={{ padding: 20 }}>
+          <div className="terminal-card" style={{ padding: 20, borderColor: tier === 'pro_plus' ? '#d97706' : undefined }}>
             <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--color-warning)', textTransform: 'uppercase' }}>
               KOSHQ PRO+
             </span>
@@ -300,8 +310,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </li>
             </ul>
 
-            <button className="btn btn-secondary" style={{ width: '100%', marginTop: 20 }}>
-              Subscribe to Pro+ (Demo)
+            <button
+              onClick={() => setTier('pro_plus')}
+              className={`btn ${tier === 'pro_plus' ? 'btn-secondary' : 'btn-primary'}`}
+              style={{
+                width: '100%',
+                marginTop: 20,
+                fontWeight: 700,
+                background: tier === 'pro_plus' ? undefined : 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+                color: '#ffffff'
+              }}
+            >
+              {tier === 'pro_plus' ? '✓ Active Pro+ Member' : 'Activate KoshQ Pro+ (Demo)'}
             </button>
           </div>
         </div>
