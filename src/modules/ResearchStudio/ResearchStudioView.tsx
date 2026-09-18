@@ -107,7 +107,7 @@ export const ResearchStudioView: React.FC = () => {
         o.unrealizedLoss,
         o.applicableRate,
         o.potentialTaxSaved,
-        `"${o.replacementProxy}"`
+        `"${o.taxSetOffNote || o.replacementProxy}"`
       ])
     ];
     const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
@@ -663,7 +663,7 @@ export const ResearchStudioView: React.FC = () => {
                     <th className="tabular-nums">LTP (₹)</th>
                     <th className="tabular-nums">Unrealized Loss</th>
                     <th className="tabular-nums">Tax Saved (₹)</th>
-                    <th>Market Replacement Proxy (Non-Wash)</th>
+                    <th>Section 70 / 71 Statutory Set-Off Rule</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -714,7 +714,7 @@ export const ResearchStudioView: React.FC = () => {
                           +{formatINR(o.potentialTaxSaved)}
                         </td>
                         <td style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                          {o.replacementProxy}
+                          {o.taxSetOffNote || o.replacementProxy}
                         </td>
                       </tr>
                     );

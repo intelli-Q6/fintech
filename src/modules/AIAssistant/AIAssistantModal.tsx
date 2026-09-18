@@ -433,12 +433,12 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
               Budget 2024 Tax Impact
             </button>
             <button
-              onClick={() => handleSend('What is my equity vs debt allocation and how can I rebalance with SIPs?')}
+              onClick={() => handleSend('Provide a comprehensive analytical breakdown of my asset allocation and risk spread')}
               className="preset-chip"
               style={{ fontSize: '11px', whiteSpace: 'nowrap' }}
               disabled={isLoading}
             >
-              Tax-Smart SIP Rebalancing
+              Asset Allocation Breakdown
             </button>
             <button
               onClick={() => handleSend('Should I buy Reliance right now?')}

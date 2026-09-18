@@ -14,6 +14,8 @@ import { AIAssistantModal } from './modules/AIAssistant/AIAssistantModal';
 import { PulseConfigModal } from './components/Modal/PulseConfigModal';
 import { AuthModal } from './components/Modal/AuthModal';
 import { AuthProvider, useAuth } from './core/auth/AuthContext';
+import { SubscriptionProvider } from './core/auth/useSubscription';
+import { ProGateModal } from './components/Modal/ProGateModal';
 import { Holding, MacroIndicatorConfig } from './data/types';
 import { VaultStorage } from './data/storage';
 import { INITIAL_PORTFOLIO_HOLDINGS } from './data/demoData';
@@ -33,6 +35,7 @@ const AppContent: React.FC = () => {
   const { authNotice, clearAuthNotice } = useAuth();
   const [activeModule, setActiveModule] = useState<NavModule>('dashboard');
   const [workbenchTab, setWorkbenchTab] = useState<'compare' | 'screener' | 'scenarios' | 'goals'>('compare');
+  const [vaultTab, setVaultTab] = useState<string>('holdings');
   const [holdings, setHoldings] = useState<Holding[]>(() => VaultStorage.getHoldings());
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
   const [isAIOpen, setIsAIOpen] = useState(false);
@@ -84,12 +87,18 @@ const AppContent: React.FC = () => {
     if (module === 'workbench' && tab) {
       setWorkbenchTab(tab as any);
     }
+    if (module === 'vault' && tab) {
+      setVaultTab(tab);
+    }
   };
 
   const handleSelectModule = (mod: NavModule) => {
     setActiveModule(mod);
     if (mod === 'workbench') {
       setWorkbenchTab('compare');
+    }
+    if (mod === 'vault') {
+      setVaultTab('holdings');
     }
   };
 
@@ -199,6 +208,7 @@ const AppContent: React.FC = () => {
               holdings={holdings}
               onUpdateHoldings={handleUpdateHoldings}
               onSelectHolding={setSelectedHolding}
+              initialTab={vaultTab}
             />
           )}
 
@@ -246,6 +256,9 @@ const AppContent: React.FC = () => {
         onClose={() => setIsAIOpen(false)}
         holdings={holdings}
       />
+
+      {/* Pro Membership Paywall / Upgrade Modal */}
+      <ProGateModal />
 
       {/* Macro Pulse Stream Configuration Modal */}
       <PulseConfigModal
@@ -323,7 +336,9 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <SubscriptionProvider>
+        <AppContent />
+      </SubscriptionProvider>
     </AuthProvider>
   );
 };

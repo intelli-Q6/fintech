@@ -12,8 +12,10 @@ import {
   ArrowRight,
   Sliders,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  FileText
 } from 'lucide-react';
+import { ProBadge } from '../../components/Common/ProBadge';
 
 interface DashboardViewProps {
   holdings: Holding[];
@@ -184,7 +186,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     healthStatus = 'Diversified';
     healthColor = '#10b981'; // Green
     healthDeltaType = 'gain';
-    healthBadge = 'Optimal';
+    healthBadge = 'Balanced';
     healthDesc = `${holdings.length} Assets across ${numAssetClasses} Asset Classes`;
   }
 
@@ -257,8 +259,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           onClick={() => setIsMMIOpen(true)}
         />
 
-        {/* Right: Actions (Stress Lab & KoshQ AI) - At Indicated Place */}
+        {/* Right: Actions (Report, Stress Lab & KoshQ AI) */}
         <div className="dashboard-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => onNavigate('vault', 'report')}
+            className="btn btn-secondary btn-sm"
+            style={{ fontSize: '11px', padding: '7px 12px', gap: 6, height: 34, fontWeight: 600 }}
+            title="Comprehensive 20-Section Portfolio Intelligence Dossier"
+          >
+            <FileText size={13} style={{ color: 'var(--accent-primary)' }} />
+            <span>Portfolio Report</span>
+            <ProBadge />
+          </button>
           <button
             onClick={() => onNavigate('workbench', 'scenarios')}
             className="btn btn-secondary btn-sm"
@@ -535,14 +547,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Right Card: Portfolio Health & Risk (Shifted to the Yellow Place) */}
+        {/* Right Card: Portfolio Structure & Diversification (Shifted to the Yellow Place) */}
         <div className="terminal-card health-risk-card">
           <div className="card-header-row">
             <span className="card-header-title">
-              Portfolio Health & Risk
+              Portfolio Structure & Diversification
             </span>
             {/* Symbol circled in blue intact, filled with dynamic health color */}
-            <span title={`Health status: ${healthStatus}`} style={{ display: 'flex', alignItems: 'center' }}>
+            <span title={`Structure status: ${healthStatus}`} style={{ display: 'flex', alignItems: 'center' }}>
               <FilledShieldCheck color={healthColor} size={18} />
             </span>
           </div>
@@ -582,6 +594,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span>Moderate</span>
                 <span>High Risk</span>
               </div>
+            </div>
+
+            {/* Dual Entry Point: Direct CTA to Comprehensive Portfolio Report */}
+            <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>20-Section Quantitative Dossier</span>
+              <button
+                onClick={() => onNavigate('vault', 'report')}
+                className="btn btn-ghost btn-xs"
+                style={{ fontSize: '11px', color: 'var(--accent-primary)', fontWeight: 600, padding: '2px 4px', gap: 4, display: 'inline-flex', alignItems: 'center' }}
+              >
+                <span>View Full Portfolio Report →</span>
+              </button>
             </div>
           </div>
         </div>

@@ -96,7 +96,8 @@ export interface TaxLossHarvestOpportunity {
   holdingTerm: 'Short Term (< 12M)' | 'Long Term (> 12M)';
   applicableRate: number; // 20% for STCG, 12.5% for LTCG
   potentialTaxSaved: number;
-  replacementProxy: string; // Factual alternative to maintain market exposure without wash risk
+  taxSetOffNote: string; // Statutory set-off rule under Section 70 / Section 71
+  replacementProxy: string; // Backwards-compatible alias for UI consumers
 }
 
 export interface TaxHarvestSummary {
@@ -122,6 +123,10 @@ export function scanTaxLossHarvestOpportunities(
       const loss = Math.abs(h.unrealizedGain);
       const isST = h.id === 'h-1' || h.id === 'h-2' ? false : true;
       const rate = isST ? 0.20 : 0.125;
+      const setOff = isST
+        ? 'Eligible for intra-head set-off against STCG and LTCG under Section 70'
+        : 'Eligible for set-off solely against LTCG under Section 70(3)';
+
       opportunities.push({
         holdingId: h.id,
         symbol: h.symbol,
@@ -136,7 +141,8 @@ export function scanTaxLossHarvestOpportunities(
         holdingTerm: isST ? 'Short Term (< 12M)' : 'Long Term (> 12M)',
         applicableRate: rate * 100,
         potentialTaxSaved: Math.round(loss * rate),
-        replacementProxy: getReplacementProxy(h.symbol, h.sector)
+        taxSetOffNote: setOff,
+        replacementProxy: setOff
       });
     }
   });
@@ -158,7 +164,8 @@ export function scanTaxLossHarvestOpportunities(
         holdingTerm: 'Short Term (< 12M)',
         applicableRate: 20,
         potentialTaxSaved: Math.round(19776 * 0.20), // ₹3,955 saved against STCG
-        replacementProxy: 'Switch to Nifty Financial Services ETF or Zomato to maintain fintech exposure'
+        taxSetOffNote: 'Section 70: Short-term capital loss offset against STCG or LTCG in AY 2026-27',
+        replacementProxy: 'Section 70: Short-term capital loss offset against STCG or LTCG in AY 2026-27'
       },
       {
         holdingId: 'demo-loss-2',
@@ -174,7 +181,8 @@ export function scanTaxLossHarvestOpportunities(
         holdingTerm: 'Long Term (> 12M)',
         applicableRate: 12.5,
         potentialTaxSaved: Math.round(14760 * 0.125), // ₹1,845 saved against LTCG
-        replacementProxy: 'Switch to ICICI Bank or HDFC Bank to maintain Private Banking beta'
+        taxSetOffNote: 'Section 70(3): Long-term capital loss offset exclusively against taxable LTCG',
+        replacementProxy: 'Section 70(3): Long-term capital loss offset exclusively against taxable LTCG'
       },
       {
         holdingId: 'demo-loss-3',
@@ -190,7 +198,8 @@ export function scanTaxLossHarvestOpportunities(
         holdingTerm: 'Short Term (< 12M)',
         applicableRate: 20,
         potentialTaxSaved: Math.round(10140 * 0.20), // ₹2,028 saved against STCG
-        replacementProxy: 'Switch to TCS or Infosys to maintain IT tier-1 presence'
+        taxSetOffNote: 'Section 70: Short-term capital loss offset against STCG or LTCG in AY 2026-27',
+        replacementProxy: 'Section 70: Short-term capital loss offset against STCG or LTCG in AY 2026-27'
       }
     );
   }
@@ -217,14 +226,4 @@ export function scanTaxLossHarvestOpportunities(
     taxAfterHarvesting,
     opportunities
   };
-}
-
-function getReplacementProxy(symbol: string, sector: string): string {
-  if (sector.toLowerCase().includes('bank')) {
-    return 'Consider ICICI Bank or Bank BeES ETF to preserve banking sector allocation';
-  }
-  if (sector.toLowerCase().includes('tech') || sector.toLowerCase().includes('information')) {
-    return 'Consider Nifty IT ETF or TCS to preserve tech exposure without holding loss';
-  }
-  return 'Consider broad Nifty 50 Index Fund to preserve overall equity exposure';
 }

@@ -5,6 +5,8 @@ import { formatINR, formatPercent } from '../../core/math/xirr';
 import { calculateGoalSIP } from '../../core/calculators/engine';
 import { CRISIS_SCENARIOS, runCrisisSimulation } from '../../core/portfolio/crisisSimulator';
 import { VaultStorage } from '../../data/storage';
+import { useSubscription } from '../../core/auth/useSubscription';
+import { ProBadge } from '../../components/Common/ProBadge';
 import {
   SlidersHorizontal,
   Scale,
@@ -15,7 +17,8 @@ import {
   Plus,
   History,
   ShieldAlert,
-  AlertTriangle
+  AlertTriangle,
+  Lock
 } from 'lucide-react';
 
 interface WorkbenchViewProps {
@@ -23,6 +26,7 @@ interface WorkbenchViewProps {
 }
 
 export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ initialTab = 'compare' }) => {
+  const { isPro, openUpgradeModal } = useSubscription();
   const [activeTab, setActiveTab] = useState<'compare' | 'screener' | 'scenarios' | 'goals'>(initialTab);
 
   useEffect(() => {
@@ -410,10 +414,17 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ initialTab = 'comp
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
               {CRISIS_SCENARIOS.map(scenario => {
                 const isSelected = scenario.id === selectedCrisisId;
+                const isLocked = !isPro && scenario.id !== 'covid_2020';
                 return (
                   <button
                     key={scenario.id}
-                    onClick={() => setSelectedCrisisId(scenario.id)}
+                    onClick={() => {
+                      if (isLocked) {
+                        openUpgradeModal(scenario.name);
+                        return;
+                      }
+                      setSelectedCrisisId(scenario.id);
+                    }}
                     style={{
                       padding: '10px 12px',
                       borderRadius: 'var(--radius-sm)',
@@ -423,11 +434,23 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ initialTab = 'comp
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 4
+                      gap: 4,
+                      position: 'relative'
                     }}
                   >
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: isSelected ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
-                      {scenario.name}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: isSelected ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
+                        {scenario.name}
+                      </span>
+                      {isLocked ? (
+                        <ProBadge isLocked />
+                      ) : scenario.id === 'covid_2020' ? (
+                        <span style={{ fontSize: '9px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--color-gain)', padding: '1px 5px', borderRadius: 3, fontWeight: 600 }}>
+                          FREE
+                        </span>
+                      ) : (
+                        <ProBadge />
+                      )}
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                       {scenario.period}

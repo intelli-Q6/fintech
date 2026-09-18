@@ -262,3 +262,11 @@ export function runCrisisSimulation(
     trajectoryPoints
   };
 }
+
+export function simulateCrisisScenario(
+  holdings: Holding[],
+  scenario: CrisisScenario,
+  monthlyExpenses: number = 60000
+): StressedPortfolioOutcome {
+  return runCrisisSimulation(holdings, scenario.id, monthlyExpenses);
+}

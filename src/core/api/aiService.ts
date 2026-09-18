@@ -266,7 +266,7 @@ However, I can help you evaluate any instrument objectively through our **5-Pill
 
 **Analytical Assessment**:
 - Weight Contribution: At ${matchedHolding.allocationPercent.toFixed(1)}%, this position has a ${matchedHolding.allocationPercent > 15 ? 'significant' : 'balanced'} influence on aggregate portfolio volatility.
-- Institutional Strategy: Maintain disciplined risk parity. Consider rebalancing if single-stock weight exceeds 15% to mitigate company-specific drawdown risk.`,
+- Institutional Diagnosis: Single-asset weights exceeding 15% historically amplify portfolio sensitivity to idiosyncratic price shocks.`,
         isInterception: false,
         modelUsed: 'koshq-intelligence-engine',
         source: 'OFFLINE_RULE_ENGINE'

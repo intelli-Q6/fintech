@@ -55,20 +55,35 @@ import {
 import { useMarketQuotes } from '../../core/market/useMarketQuotes';
 import { TransactionService } from '../../core/services/transactionService';
 import { getSupabase } from '../../core/supabase/supabaseClient';
+import { PortfolioReportView } from './PortfolioReportView';
+import { ProBadge } from '../../components/Common/ProBadge';
 
 interface PortfolioVaultViewProps {
   holdings: Holding[];
   onUpdateHoldings: (h: Holding[]) => void;
   onSelectHolding: (h: Holding) => void;
+  initialTab?: string;
 }
 
 export const PortfolioVaultView: React.FC<PortfolioVaultViewProps> = ({
   holdings,
   onUpdateHoldings,
-  onSelectHolding
+  onSelectHolding,
+  initialTab
 }) => {
   const { syncAMFI, tickerState } = useMarketQuotes();
-  const [activeTab, setActiveTab] = useState<'holdings' | 'xray' | 'rebalance' | 'cas_import' | 'broker_import' | 'manual_add'>('holdings');
+  const [activeTab, setActiveTab] = useState<'holdings' | 'xray' | 'rebalance' | 'report' | 'cas_import' | 'broker_import' | 'manual_add'>(() => {
+    if (initialTab && ['holdings', 'xray', 'rebalance', 'report', 'cas_import', 'broker_import', 'manual_add'].includes(initialTab)) {
+      return initialTab as any;
+    }
+    return 'holdings';
+  });
+
+  React.useEffect(() => {
+    if (initialTab && ['holdings', 'xray', 'rebalance', 'report', 'cas_import', 'broker_import', 'manual_add'].includes(initialTab)) {
+      setActiveTab(initialTab as any);
+    }
+  }, [initialTab]);
 
   // Rebalance Engine State
   const [selectedProfileId, setSelectedProfileId] = useState<AllocationProfileId>('balanced');
@@ -438,6 +453,15 @@ export const PortfolioVaultView: React.FC<PortfolioVaultViewProps> = ({
           Portfolio X-Ray & Concentration
         </button>
         <button
+          onClick={() => setActiveTab('report')}
+          className={`tab-btn ${activeTab === 'report' ? 'active' : ''}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+        >
+          <FileText size={13} />
+          <span>Portfolio Report</span>
+          <ProBadge />
+        </button>
+        <button
           onClick={() => setActiveTab('rebalance')}
           className={`tab-btn ${activeTab === 'rebalance' ? 'active' : ''}`}
         >
@@ -465,6 +489,11 @@ export const PortfolioVaultView: React.FC<PortfolioVaultViewProps> = ({
           Manual Asset Entry
         </button>
       </div>
+
+      {/* Flagship Tab: Comprehensive Portfolio Report */}
+      {activeTab === 'report' && (
+        <PortfolioReportView holdings={holdings} />
+      )}
 
       {/* Tab 1: Holdings Ledger */}
       {activeTab === 'holdings' && (
